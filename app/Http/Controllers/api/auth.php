@@ -49,6 +49,7 @@ class auth extends Controller
             'user' => $user
         ]);
     }
+    
 
     public function verifyOtp(Request $request)
     {
