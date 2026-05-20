@@ -119,7 +119,7 @@
                         <td>
                             <h4>{{ $medicine->name }}</h4>
                         </td>
-                        <td>{{ $medicine->category->name }}</td>
+                        <td>{{ $medicine->category->name ?? 'N/A' }}</td>
                         <td>₹ {{ number_format($medicine->price, 2) }}</td>
                         <td>{{ $medicine->quantity }}</td>
                         <td>{{ $medicine->status }}</td>
@@ -444,7 +444,7 @@
 
                     <div class="mf-group">
                         <label>Stock Qty</label>
-                        <input type="number" name="stock" id="e-stock" min="0" />
+                        <input type="number" name="quantity" id="e-stock" min="0" />
                     </div>
 
                     <div class="mf-group">

@@ -86,7 +86,7 @@ class MedicineController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'price' => 'required|numeric',
-            'stock' => 'required|numeric',
+            'quantity' => 'required|numeric',
         ]);
 
         try {
@@ -96,7 +96,7 @@ class MedicineController extends Controller
             $medicine->name = $request->name;
             $medicine->category_id = $request->category_id;
             $medicine->price = $request->price;
-            $medicine->stock = $request->stock;
+            $medicine->quantity = $request->quantity;
             $medicine->status = $request->status;
 
             $medicine->save();
