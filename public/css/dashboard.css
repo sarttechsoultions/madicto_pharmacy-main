@@ -1,0 +1,530 @@
+/* ── CONTENT ── */
+
+.content-left {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+}
+
+.content-right {
+    width: 290px;
+    min-width: 290px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+/* ── PAGE HEADER ── */
+.page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.page-header h1 {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--text-dark);
+    letter-spacing: -0.3px;
+}
+
+.page-header p {
+    font-size: 13px;
+    color: var(--text-light);
+    margin-top: 3px;
+}
+
+.header-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn {
+    padding: 9px 18px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    transition: all 0.18s;
+    border: none;
+}
+
+.btn-outline {
+    background: var(--card-bg);
+    border: 1.5px solid var(--border);
+    color: var(--text-dark);
+}
+
+.btn-outline:hover {
+    border-color: var(--pink);
+    color: var(--pink);
+}
+
+.btn-primary {
+    background: var(--pink);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(233, 30, 140, 0.3);
+}
+
+.btn-primary:hover {
+    background: #c9186f;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(233, 30, 140, 0.38);
+}
+
+/* ── STAT CARDS ── */
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+.stat-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.stat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.stat-icon-wrap {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--pink-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.stat-badge {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.badge-up {
+    background: #ECFDF3;
+    color: var(--green);
+}
+
+.badge-down {
+    background: #FFF1F0;
+    color: var(--red);
+}
+
+.badge-neutral {
+    background: var(--main-bg);
+    color: var(--text-light);
+}
+
+.stat-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-light);
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.stat-value {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--text-dark);
+    letter-spacing: -0.5px;
+}
+
+/* ── REVENUE CHART CARD ── */
+.chart-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 22px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
+}
+
+.chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+
+.chart-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.toggle-group {
+    display: flex;
+    gap: 0;
+    border: 1.5px solid var(--border);
+    border-radius: 9px;
+    overflow: hidden;
+}
+
+.toggle-btn {
+    padding: 6px 14px;
+    font-size: 12.5px;
+    font-weight: 600;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    color: var(--text-mid);
+    transition: all 0.18s;
+}
+
+.toggle-btn.active {
+    background: var(--pink);
+    color: #fff;
+}
+
+.chart-area {
+    position: relative;
+    height: 180px;
+}
+
+svg.chart-svg {
+    width: 100%;
+    height: 100%;
+}
+
+.x-labels {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 4px 0;
+}
+
+.x-label {
+    font-size: 11px;
+    color: var(--text-light);
+    font-weight: 500;
+}
+
+/* ── RECENT ORDERS ── */
+.orders-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 22px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
+}
+
+.orders-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.orders-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.view-all {
+    font-size: 13px;
+    color: var(--pink);
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.view-all:hover {
+    text-decoration: underline;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+thead th {
+    text-align: left;
+    padding: 0 12px 12px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--text-light);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+}
+
+tbody tr {
+    transition: background 0.15s;
+}
+
+tbody tr:hover {
+    background: var(--pink-soft);
+}
+
+tbody td {
+    padding: 13px 12px;
+    font-size: 13.5px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+}
+
+tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.order-id {
+    font-weight: 700;
+    color: var(--text-dark);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.patient-name {
+    font-weight: 500;
+}
+
+.medicine-name {
+    color: var(--text-mid);
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11.5px;
+    font-weight: 600;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.status-shipped {
+    background: #EFF8FF;
+    color: var(--blue);
+}
+
+.status-processing {
+    background: #FFFAEB;
+    color: var(--orange);
+}
+
+.status-cancelled {
+    background: #FFF1F0;
+    color: var(--red);
+}
+
+.total-amount {
+    font-weight: 700;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* ── RIGHT PANEL ── */
+.panel-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
+}
+
+.panel-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.alert-icon {
+    color: var(--orange);
+    font-size: 15px;
+}
+
+.stock-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 11px 13px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border);
+    margin-bottom: 8px;
+    transition: border-color 0.18s;
+}
+
+.stock-item:hover {
+    border-color: var(--orange);
+}
+
+.stock-name {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.stock-qty {
+    font-size: 11.5px;
+    color: var(--text-light);
+    margin-top: 1px;
+}
+
+.stock-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--red);
+    flex-shrink: 0;
+}
+
+.btn-restock {
+    width: 100%;
+    padding: 10px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    background: var(--pink);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    margin-top: 4px;
+    transition: all 0.18s;
+}
+
+.btn-restock:hover {
+    background: #c9186f;
+}
+
+/* Top Selling */
+.med-item {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    margin-bottom: 14px;
+}
+
+.med-img {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--main-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+}
+
+.med-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.med-name {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.progress-bar-bg {
+    height: 5px;
+    border-radius: 3px;
+    background: var(--border);
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--pink);
+    transition: width 0.6s ease;
+}
+
+.med-pct {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-mid);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    min-width: 32px;
+    text-align: right;
+}
+
+/* Help */
+.help-card {
+    background: var(--pink-light);
+    border-radius: var(--radius);
+    padding: 18px;
+    border: 1px solid var(--pink-mid);
+}
+
+.help-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.help-text {
+    font-size: 12.5px;
+    color: var(--text-mid);
+    line-height: 1.5;
+    margin-bottom: 12px;
+}
+
+.btn-help {
+    width: 100%;
+    padding: 9px;
+    border-radius: 9px;
+    border: 1.5px solid var(--pink);
+    background: transparent;
+    color: var(--pink);
+    font-size: 13px;
+    font-weight: 700;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    cursor: pointer;
+    transition: all 0.18s;
+}
+
+.btn-help:hover {
+    background: var(--pink);
+    color: #fff;
+}
+
+/* scrollbar */
+::-webkit-scrollbar {
+    width: 5px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+}

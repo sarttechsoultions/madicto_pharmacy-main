@@ -1,0 +1,352 @@
+@extends('admin.layouts.layout')
+
+@section('content')
+
+
+<!-- CONTENT -->
+
+<div class="od-content">
+
+  <!-- HEADER -->
+
+  <div class="od-header">
+
+    <div>
+      <h1>Order Fulfillment</h1>
+      <p>Manage prescription orders and pharmacy delivery cycles.</p>
+    </div>
+
+    <div class="od-btns">
+      <button class="od-btn od-btn-outline">Export CSV</button>
+      <button class="od-btn od-btn-primary">+ Manual Order</button>
+    </div>
+
+  </div>
+
+  <!-- CARDS -->
+
+  <div class="od-cards">
+
+    <div class="od-card">
+      <h4>Pending Orders</h4>
+      <h2>142</h2>
+    </div>
+
+    <div class="od-card">
+      <h4>In Transit</h4>
+      <h2>56</h2>
+    </div>
+
+    <div class="od-card">
+      <h4>Issues / Returns</h4>
+      <h2>08</h2>
+    </div>
+
+    <div class="od-card">
+      <h4>Revenue</h4>
+      <h2>$42.8k</h2>
+    </div>
+
+  </div>
+
+  <!-- TABLE -->
+
+  <div class="od-table-box">
+
+    <div class="od-table-top">
+
+      <div class="od-tabs">
+        <div class="od-tab od-active">All Orders</div>
+        <div class="od-tab">Pending</div>
+        <div class="od-tab">Shipped</div>
+        <div class="od-tab">Delivered</div>
+        <div class="od-tab">Cancelled</div>
+      </div>
+
+      <select class="od-filter">
+        <option>Status : Any</option>
+        <option>Pending</option>
+        <option>Delivered</option>
+      </select>
+
+    </div>
+
+    <div class="od-table-wrap">
+
+      <table class="od-table">
+
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>CUSTOMER</th>
+            <th>MEDICINES</th>
+            <th>PAYMENT</th>
+            <th>STATUS</th>
+            <th>AMOUNT</th>
+            <th>DATE</th>
+            <th>ACTION</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          @foreach ($orders as $order)
+
+          <tr>
+
+            <td><strong>#{{ $order->id }}</strong></td>
+
+            <td>
+              <a href="{{ route('order.details', $order->id) }}"
+                style="text-decoration:none; color:inherit;">
+                <div class="od-customer">
+
+                  <div class="od-user">{{ substr($order->user->name ?? 'N/A', 0, 2) }}</div>
+
+                  <div>
+                    <strong>{{ $order->user->name ?? 'N/A' }}</strong>
+                    <p>{{ $order->user->email ?? 'N/A' }}</p>
+                  </div>
+
+                </div>
+              </a>
+            </td>
+
+            <td>
+              <div class="od-medicine">{{ $order->medicine->name }}</div>
+            </td>
+
+            <!-- PAYMENT STATUS -->
+            <td>
+
+              <select class="od-status-select"
+                onchange="updatePaymentStatus(this.value, {{ $order->id }})">
+
+                <option value="Pending"
+                  @selected($order->payment_status == 'Pending')>
+                  ● Pending
+                </option>
+
+                <option value="Paid"
+                  @selected($order->payment_status == 'Paid')>
+                  ● Paid
+                </option>
+
+                <option value="Failed"
+                  @selected($order->payment_status == 'Failed')>
+                  ● Failed
+                </option>
+
+              </select>
+
+            </td>
+
+
+            <!-- ORDER STATUS -->
+            <td>
+
+              <select class="od-status-select"
+                onchange="updateOrderStatus(this.value, {{ $order->id }})">
+
+                <option value="Pending"
+                  @selected($order->status == 'Pending')>
+                  ● Pending
+                </option>
+
+                <option value="Shipped"
+                  @selected($order->status == 'Shipped')>
+                  ● Shipped
+                </option>
+
+                <option value="Delivered"
+                  @selected($order->status == 'Delivered')>
+                  ● Delivered
+                </option>
+
+              </select>
+
+            </td>
+
+
+            <td><strong>₹ {{ $order->medicine->price }}</strong></td>
+
+            <td>{{ $order->created_at->format('M j, Y') }}</td>
+
+            <td> <button class="od-delete-btn" onclick="openDeleteModal(this)">
+
+                Delete
+
+              </button></td>
+
+          </tr>
+          @endforeach
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+    <!-- PAGINATION -->
+
+    <div class="od-pagination">
+
+      {{ $orders->links()  }}
+
+    </div>
+
+
+    <form id="deleteForm" method="POST">
+      @csrf
+      @method('DELETE')
+
+      <div class="od-modal" id="odDeleteModal">
+
+        <div class="od-modal-box">
+
+          <h2>Delete Order</h2>
+
+          <div class="od-delete-details">
+
+            <p><strong>ID:</strong> <span id="deleteOrderId"></span></p>
+
+            <p><strong>Customer:</strong> <span id="deleteCustomer"></span></p>
+
+            <p><strong>Amount:</strong> <span id="deleteAmount"></span></p>
+
+          </div>
+
+          <p style="margin-bottom:15px; color:#666;">
+            Are you sure you want to delete this order?
+          </p>
+
+          <div class="od-modal-actions">
+
+            <button type="button" class="od-cancel-btn" onclick="closeDeleteModal()">
+              Cancel
+            </button>
+
+            <button type="submit" class="od-confirm-delete">
+              Yes Delete
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+    </form>
+
+  </div>
+
+  <script>
+    const odToggle = document.getElementById('odToggle');
+    const odSidebar = document.getElementById('odSidebar');
+    const odMain = document.getElementById('odMain');
+
+    odToggle.addEventListener('click', () => {
+
+      // MOBILE
+      if (window.innerWidth <= 768) {
+
+        odSidebar.classList.toggle('od-show');
+
+      }
+
+      // DESKTOP
+      else {
+
+        odSidebar.classList.toggle('od-hide');
+        odMain.classList.toggle('od-expand');
+
+      }
+
+    });
+
+
+    // CLICK OUTSIDE CLOSE MOBILE SIDEBAR
+
+    document.addEventListener('click', function(e) {
+
+      if (
+        window.innerWidth <= 768 &&
+        !odSidebar.contains(e.target) &&
+        !odToggle.contains(e.target)
+      ) {
+        odSidebar.classList.remove('od-show');
+      }
+
+    });
+  </script>
+
+  <script>
+    function updateOrderStatus(status, orderId) {
+
+      fetch('/update-order-status', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+          },
+          body: JSON.stringify({
+            id: orderId,
+            status: status
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+          location.reload();
+        });
+
+    }
+
+    function updatePaymentStatus(payment_status, orderId) {
+
+      fetch('/update-payment-status', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+          },
+          body: JSON.stringify({
+            id: orderId,
+            payment_status: payment_status
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+          location.reload();
+        });
+
+    }
+  </script>
+
+  <script>
+    let selectedOrderId = null;
+
+    function openDeleteModal(button) {
+
+      const row = button.closest('tr');
+
+      selectedOrderId = row.children[0].innerText.replace('#', '');
+
+      const customer = row.querySelector('.od-customer strong').innerText;
+      const amount = row.children[5].innerText;
+
+      document.getElementById('deleteOrderId').innerText = selectedOrderId;
+      document.getElementById('deleteCustomer').innerText = customer;
+      document.getElementById('deleteAmount').innerText = amount;
+
+      // IMPORTANT: set form action dynamically
+      document.getElementById('deleteForm').action =
+        "/orders/" + selectedOrderId;
+
+      document.getElementById('odDeleteModal').style.display = 'flex';
+    }
+
+    function closeDeleteModal() {
+      document.getElementById('odDeleteModal').style.display = 'none';
+    }
+  </script>
+
+
+  @endsection
