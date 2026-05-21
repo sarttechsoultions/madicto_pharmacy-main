@@ -14,22 +14,59 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rules;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\File;
 
 class api extends Controller
 {
 
-    public function getMedicines()
+    public function getMedicines(Request $request)
     {
-        $medicines = medicineModel::all();
+        $query = medicineModel::query();
+
+        if ($request->filled('name')) {
+            $query->where('name', 'LIKE', '%' . $request->name . '%');
+        }
+
+        // Filter by category_id
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        // Price range filter
+        if ($request->filled('min_price')) {
+            $query->where('price', '>=', $request->min_price);
+        }
+
+        if ($request->filled('max_price')) {
+            $query->where('price', '<=', $request->max_price);
+        }
+
+        // Filter by unit
+        if ($request->filled('unit_type')) {
+            $query->where('unit_type', $request->unit_type);
+        }
+
+        $medicines = $query->get();
+
         return response()->json([
             'success' => true,
             'data' => $medicines
         ]);
     }
 
-    public function getCategory()
+    public function getCategory(Request $request)
     {
-        $categories = CategoryModel::all();
+        $query = CategoryModel::query();
+
+        if ($request->filled('name')) {
+            $query->where('name', 'LIKE', '%' . $request->name . '%');
+        }
+        if ($request->filled('description')) {
+            $query->where('description', 'LIKE', '%' . $request->description . '%');
+        }
+
+        $categories = $query->get();
+
         return response()->json([
             'success' => true,
             'data' => $categories
@@ -78,6 +115,15 @@ class api extends Controller
         return response()->json([
             'message' => 'Order Created',
             'order' => $order
+        ]);
+    }
+
+    public function getAddresses()
+    {
+        $addresses = AddressModel::where('coustmer_id', auth()->id())->get();
+        return response()->json([
+            'success' => true,
+            'data' => $addresses
         ]);
     }
 
@@ -132,6 +178,143 @@ class api extends Controller
 
         return response()->json([
             'message' => 'Address Deleted'
+        ]);
+    }
+
+    public function getProfile()
+    {
+        $user = Auth::user();
+
+        return response()->json([
+            'success' => true,
+            'data' => $user
+        ]);
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['nullable', 'email'],
+            'number' => ['nullable', 'string', 'max:20'],
+            'gender' => ['nullable', 'string', 'in:male,female,other'],
+            'profile_img' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+        ]);
+
+        $user = Auth::guard('sanctum')->user();
+
+        $user->name = $request->name;
+        $user->gender = $request->gender;
+
+        if (!empty($user->email)) {
+
+            $user->number = $request->number ?? $user->number;
+        } elseif (!empty($user->number)) {
+
+            $user->email = $request->email ?? $user->email;
+        }
+
+        if ($request->hasFile('profile_img')) {
+
+            $path = public_path('uploads/profile');
+
+            if (!File::exists($path)) {
+                File::makeDirectory($path, 0777, true, true);
+            }
+
+            if ($user->profile_img && File::exists($path . '/' . $user->profile_img)) {
+                File::delete($path . '/' . $user->profile_img);
+            }
+
+            $image = $request->file('profile_img');
+
+            $imageName = time() . '.' . $image->getClientOriginalExtension();
+
+            $image->move($path, $imageName);
+
+            $user->profile_img = $imageName;
+        }
+
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Profile updated successfully',
+            'user' => $user
+        ]);
+    }
+
+    public function shareReferral()
+    {
+        $user = Auth::user();
+
+        $referralCode = $user->referral_code;
+
+        $referralLink = "https://yourapp.onelink.me/abcd?ref={$referralCode}";
+
+        $shareMessage = "Download the Medicto Pharmacy app to get upto 51% savings on your medicines. Use the link or code below to get ₹200 off on your first order.\n\nCode: {$referralCode}\n\nLink: {$referralLink}";
+
+        return response()->json([
+            'success' => true,
+            'referral_code' => $referralCode,
+            'referral_link' => $referralLink,
+            'share_message' => $shareMessage,
+        ]);
+    }
+
+
+    public function applyReferralCode(Request $request)
+    {
+        $request->validate([
+            'referral_code' => 'required|string'
+        ]);
+
+        $user = Auth::user();
+
+        if ($user->referred_by != null) {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Referral code already used'
+            ]);
+        }
+
+        if ($user->referral_code == $request->referral_code) {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'You cannot use your own referral code'
+            ]);
+        }
+
+        $referrer = User::where(
+            'referral_code',
+            $request->referral_code
+        )->first();
+
+        if (!$referrer) {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid referral code'
+            ]);
+        }
+
+
+        $referrer->wallet += 100;
+        $referrer->save();
+
+        $user->wallet += 50;
+
+        $user->referred_by = $referrer->id;
+
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Referral code applied successfully',
+            'your_wallet' => $user->wallet,
+            'referred_by' => $user->referred_by
         ]);
     }
 

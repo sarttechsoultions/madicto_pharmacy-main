@@ -11,6 +11,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rules;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
 
 class auth extends Controller
 {
@@ -18,6 +19,7 @@ class auth extends Controller
     {
         $request->validate([
             'email' => ['required', 'email'],
+            'referral_code' => ['nullable']
         ]);
 
         // User check
@@ -27,7 +29,8 @@ class auth extends Controller
         if (!$user) {
 
             $user = User::create([
-                'email' => $request->email // dummy password
+                'email' => $request->email,
+                'referral_code' => strtoupper(Str::random(8)),
             ]);
         }
 
@@ -49,7 +52,7 @@ class auth extends Controller
             'user' => $user
         ]);
     }
-    
+
 
     public function verifyOtp(Request $request)
     {

@@ -183,6 +183,7 @@
                         <th>USER PROFILE</th>
                         <th>MOBILE NUMBER</th>
                         <th>TOTAL ORDERS</th>
+                        <th>WALLET BALANCE</th>
                         <th>JOINED DATE</th>
                         <th>ACTIONS</th>
                     </tr>
@@ -205,6 +206,9 @@
                         <td>{{ $users->number ?? 'N/A' }}</td>
                         <td>
                             <div class="um-order">{{ $users->orders->count() }} Orders</div>
+                        </td>
+                        <td>
+                            <div class="um-wallet">₹ {{ number_format($users->wallet, 2) }}</div>
                         </td>
                         <td>{{ $users->created_at->format('M j, Y') }}</td>
                         <td>
