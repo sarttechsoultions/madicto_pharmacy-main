@@ -86,9 +86,15 @@
         </nav>
 
         <div class="sidebar-footer">
-            <a class="nav-item" href="#">
-                <i class="fa-solid fa-gear"></i><span>Settings</span>
+            <a class="nav-item" href="{{ route('logout') }}"
+                onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Logout</span>
             </a>
+
+            <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+                @csrf
+            </form>
         </div>
     </aside>
 

@@ -527,5 +527,97 @@
 </div>
 
 <script src="{{ asset('js/main.js') }}"></script>
+<script>
+    function filterTable() {
+        let input = document.getElementById("filterInput").value.toLowerCase();
+        let catFilter = document.getElementById("catFilter").value;
+        let statusFilter = document.getElementById("statusFilter").value;
+        let sortFilter = document.getElementById("sortFilter").value;
+
+        let table = document.querySelector("tbody");
+        let rows = Array.from(table.querySelectorAll("tr"));
+
+        rows.forEach(row => {
+            let name = row.cells[2].innerText.toLowerCase();
+            let category = row.cells[3].innerText.trim();
+            let price = parseFloat(row.cells[4].innerText.replace("₹", "").replace(",", ""));
+            let stock = parseInt(row.cells[5].innerText);
+            let status = row.cells[6].innerText.trim();
+
+            let matchName = name.includes(input);
+
+            // CATEGORY MATCH
+            let selectedCatText = "";
+            let catSelect = document.getElementById("catFilter");
+
+            if (catSelect.selectedIndex > 0) {
+                selectedCatText = catSelect.options[catSelect.selectedIndex].text.trim();
+            }
+
+            let matchCategory =
+                selectedCatText === "" ||
+                category === selectedCatText;
+
+            // STATUS MATCH
+            let matchStatus =
+                statusFilter === "All Status" ||
+                status === statusFilter;
+
+            if (matchName && matchCategory && matchStatus) {
+                row.style.display = "";
+            } else {
+                row.style.display = "none";
+            }
+        });
+
+        // SORTING
+        let visibleRows = rows.filter(row => row.style.display !== "none");
+
+        visibleRows.sort((a, b) => {
+            let nameA = a.cells[2].innerText.toLowerCase();
+            let nameB = b.cells[2].innerText.toLowerCase();
+
+            let priceA = parseFloat(a.cells[4].innerText.replace("₹", "").replace(",", ""));
+            let priceB = parseFloat(b.cells[4].innerText.replace("₹", "").replace(",", ""));
+
+            let stockA = parseInt(a.cells[5].innerText);
+            let stockB = parseInt(b.cells[5].innerText);
+
+            switch (sortFilter) {
+                case "Name (A-Z)":
+                    return nameA.localeCompare(nameB);
+
+                case "Name (Z-A)":
+                    return nameB.localeCompare(nameA);
+
+                case "Price ↑":
+                    return priceA - priceB;
+
+                case "Price ↓":
+                    return priceB - priceA;
+
+                case "Stock ↑":
+                    return stockA - stockB;
+
+                case "Stock ↓":
+                    return stockB - stockA;
+
+                default:
+                    return 0;
+            }
+        });
+
+        visibleRows.forEach(row => table.appendChild(row));
+    }
+
+    function resetFilters() {
+        document.getElementById("filterInput").value = "";
+        document.getElementById("catFilter").selectedIndex = 0;
+        document.getElementById("statusFilter").selectedIndex = 0;
+        document.getElementById("sortFilter").selectedIndex = 0;
+
+        filterTable();
+    }
+</script>
 
 @endsection
