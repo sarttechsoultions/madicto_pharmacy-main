@@ -18,10 +18,11 @@ Route::post('/forgot-password', [auth::class, 'forgotPassword']);
 Route::post('/send-otp', [auth::class, 'sendOtp']);
 Route::post('/verify-otp', [auth::class, 'verifyOtp']);
 
+Route::get('/medicines', [api::class, 'getMedicines']);
+Route::get('/categories', [api::class, 'getCategory']);
+Route::get('/banners', [api::class, 'getBanners']);
+
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/medicines', [api::class, 'getMedicines']);
-    Route::get('/categories', [api::class, 'getCategory']);
-    Route::get('/banners', [api::class, 'getBanners']);
     Route::get('/orders', [api::class, 'getOrders']);
 
     Route::post('/orders-created', [api::class, 'OrdersCreated']);
