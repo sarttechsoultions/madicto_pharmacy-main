@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CategoryModel;
+use App\Models\medicineModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Exception;
@@ -13,8 +14,10 @@ class CategoryController extends Controller
     {
         $categories = CategoryModel::orderByDesc('created_at')
             ->paginate(10);
+        $categoriestotal = CategoryModel::count();
+        $activemedicetotal = medicineModel::where('status', 'In Stock')->count();
 
-        return view('admin.category', compact('categories'));
+        return view('admin.category', compact('categories', 'categoriestotal', 'activemedicetotal'));
     }
     public function store(Request $request)
     {

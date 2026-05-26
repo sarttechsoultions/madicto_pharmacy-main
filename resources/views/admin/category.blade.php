@@ -46,23 +46,15 @@
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-label">Total Categories</div>
-            <div class="stat-value pink">24</div>
-            <div class="stat-sub">
-                <span class="badge-up">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-                        <polyline points="17 6 23 6 23 12" />
-                    </svg>
-                    +2 this month
-                </span>
-            </div>
+            <div class="stat-value pink">{{ $categoriestotal }}</div>
+            <div class="stat-sub">All therapeutic groups</div>
         </div>
         <div class="stat-card">
             <div class="stat-label">Active Medicines</div>
-            <div class="stat-value">1,482</div>
+            <div class="stat-value">{{ $activemedicetotal }}</div>
             <div class="stat-sub">In stock across all groups</div>
         </div>
-        <div class="stat-card">
+        <!-- <div class="stat-card">
             <div class="stat-label">Top Performing</div>
             <div class="stat-value" style="font-size:20px;padding-top:4px;">Antibiotics</div>
             <div class="stat-sub">Highest demand this week</div>
@@ -71,7 +63,7 @@
             <div class="stat-label">System Health</div>
             <div class="stat-value green" style="font-size:20px;padding-top:4px;">Optimal</div>
             <div class="stat-sub">Database synced 2m ago</div>
-        </div>
+        </div> -->
     </div>
 
     <!-- Category Cards -->

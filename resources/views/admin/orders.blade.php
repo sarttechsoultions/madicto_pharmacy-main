@@ -29,22 +29,22 @@
 
     <div class="od-card">
       <h4>Pending Orders</h4>
-      <h2>142</h2>
+      <h2>{{ $ordertotal }}</h2>
     </div>
 
     <div class="od-card">
-      <h4>In Transit</h4>
-      <h2>56</h2>
+      <h4>Delivered Orders</h4>
+      <h2>{{ $orderdelivered }}</h2>
     </div>
 
     <div class="od-card">
-      <h4>Issues / Returns</h4>
-      <h2>08</h2>
+      <h4>Pending Payments</h4>
+      <h2>{{ $paymentpending }}</h2>
     </div>
 
     <div class="od-card">
-      <h4>Revenue</h4>
-      <h2>$42.8k</h2>
+      <h4>Paid Payments</h4>
+      <h2>{{ $paymentpaid }}</h2>
     </div>
 
   </div>
@@ -56,17 +56,19 @@
     <div class="od-table-top">
 
       <div class="od-tabs">
-        <div class="od-tab od-active">All Orders</div>
-        <div class="od-tab">Pending</div>
-        <div class="od-tab">Shipped</div>
-        <div class="od-tab">Delivered</div>
-        <div class="od-tab">Cancelled</div>
+        <div class="od-tab od-active" data-status="All">All Orders</div>
+        <div class="od-tab" data-status="Pending">Pending</div>
+        <div class="od-tab" data-status="Shipped">Shipped</div>
+        <div class="od-tab" data-status="Delivered">Delivered</div>
+        <div class="od-tab" data-status="Cancelled">Cancelled</div>
       </div>
 
-      <select class="od-filter">
-        <option>Status : Any</option>
-        <option>Pending</option>
-        <option>Delivered</option>
+      <select class="od-filter" id="statusFilter">
+        <option value="Any">Status : Any</option>
+        <option value="Pending">Pending</option>
+        <option value="Shipped">Shipped</option>
+        <option value="Delivered">Delivered</option>
+        <option value="Cancelled">Cancelled</option>
       </select>
 
     </div>
@@ -346,6 +348,71 @@
     function closeDeleteModal() {
       document.getElementById('odDeleteModal').style.display = 'none';
     }
+  </script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+
+      const tabs = document.querySelectorAll(".od-tab");
+      const filterSelect = document.getElementById("statusFilter");
+      const rows = document.querySelectorAll(".od-table tbody tr");
+
+      // TAB FILTER
+      tabs.forEach(tab => {
+
+        tab.addEventListener("click", function() {
+
+          tabs.forEach(t => t.classList.remove("od-active"));
+          this.classList.add("od-active");
+
+          let status = this.dataset.status;
+
+          filterRows(status);
+        });
+
+      });
+
+      // SELECT FILTER
+      filterSelect.addEventListener("change", function() {
+
+        let value = this.value;
+
+        if (value === "Any") {
+          filterRows("All");
+        } else {
+          filterRows(value);
+        }
+
+      });
+
+      // MAIN FILTER FUNCTION
+      function filterRows(status) {
+
+        rows.forEach(row => {
+
+          let orderStatus = row.querySelectorAll(".od-status-select")[1]
+            .value
+            .trim();
+
+          if (status === "All") {
+
+            row.style.display = "";
+
+          } else if (orderStatus === status) {
+
+            row.style.display = "";
+
+          } else {
+
+            row.style.display = "none";
+
+          }
+
+        });
+
+      }
+
+    });
   </script>
 
 

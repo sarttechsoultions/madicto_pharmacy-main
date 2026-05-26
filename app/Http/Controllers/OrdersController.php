@@ -11,7 +11,12 @@ class OrdersController extends Controller
     public function index()
     {
         $orders = OrdersModel::paginate(20);
-        return view('admin.orders', compact('orders'));
+        $ordertotal = OrdersModel::where('status', 'Pending')->count();
+        $orderdelivered = OrdersModel::where('status', 'Delivered')->count();
+        $paymentpending = OrdersModel::where('payment_status', 'Pending')->count();
+        $paymentpaid = OrdersModel::where('payment_status', 'Paid')->count();
+
+        return view('admin.orders', compact('orders', 'ordertotal', 'orderdelivered', 'paymentpending', 'paymentpaid'));
     }
 
     public function updateOrderStatus(Request $request)

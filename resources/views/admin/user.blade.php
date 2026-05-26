@@ -56,122 +56,35 @@
     <div class="um-filter">
 
         <div class="um-filter-input">
-            <input type="text" placeholder="Filter by name or email...">
+            <input type="text" id="userSearch"
+                placeholder="Filter by name or email...">
         </div>
 
         <div class="um-select-wrap">
-            <select class="um-select">
-                <option>All Statuses</option>
-                <option>Active</option>
-                <option>Blocked</option>
-                <option>Pending</option>
+            <select class="um-select" id="statusFilter">
+                <option value="all">All Statuses</option>
+                <option value="active">Active</option>
+                <option value="blocked">Blocked</option>
+                <option value="pending">Pending</option>
             </select>
         </div>
 
         <div class="um-select-wrap">
-            <select class="um-select">
-                <option>Joined (Last 30 Days)</option>
-                <option>Last 7 Days</option>
-                <option>Last 3 Months</option>
+            <select class="um-select" id="dateFilter">
+                <option value="30">Joined (Last 30 Days)</option>
+                <option value="7">Last 7 Days</option>
+                <option value="90">Last 3 Months</option>
+                <option value="all">All Time</option>
             </select>
         </div>
 
-        <div class="um-clear">Clear All</div>
+        <div class="um-clear" onclick="resetUserFilters()">
+            Clear All
+        </div>
 
     </div>
 
     <!-- TABLE -->
-
-    <div class="um-card">
-
-        <div class="um-table-wrap">
-            <table class="um-table">
-
-                <thead>
-                    <tr>
-                        <th>ADMIN PROFILE</th>
-                        <th>MOBILE NUMBER</th>
-                        <th>TOTAL ORDERS</th>
-                        <th>JOINED DATE</th>
-                        <th>ACTIONS</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-
-                    @foreach ($adminss as $users)
-
-                    <tr>
-                        <td>
-                            <div class="um-user">
-                                <div class="um-user-img">{{ substr($users->name, 0, 2) }}</div>
-                                <div>
-                                    <h4>{{ $users->name }}</h4>
-                                    <p>{{ $users->email }}</p>
-                                </div>
-                            </div>
-                        </td>
-                        <td>{{ $users->number ?? 'N/A' }}</td>
-                        <td>
-                            <div class="um-order">{{ $users->orders->count() }} Orders</div>
-                        </td>
-                        <td>{{ $users->created_at->format('M j, Y') }}</td>
-                        <td>
-                            <div class="um-actions-icons">
-
-                                <!-- STATUS TOGGLE -->
-                                <span class="toggle-status"
-                                    data-id="{{ $users->id }}"
-                                    data-status="{{ $users->status }}"
-                                    onclick="toggleUserStatus(this)">
-
-                                    @if($users->status == 'Active')
-                                    🔓
-                                    @else
-                                    🚫
-                                    @endif
-
-                                </span>
-
-                                <!-- ROLE TOGGLE BUTTON -->
-                                <!-- <button
-                                    class="role-btn"
-                                    onclick="toggleUserRole({{ $users->id }})">
-
-                                    @if($users->role == 1)
-                                    👤 Admin
-                                    @else
-                                    👥 User
-                                    @endif
-
-                                </button> -->
-
-                            </div>
-                        </td>
-                    </tr>
-                    @endforeach
-
-                </tbody>
-
-            </table>
-        </div>
-
-        <div class="um-footer">
-            <div>Showing {{ $adminss->firstItem() }} to {{ $adminss->lastItem() }} of {{ $adminss->total() }} users</div>
-
-            <div class="um-pagination">
-                {{ $adminss->links() }}
-
-            </div>
-
-        </div>
-
-    </div>
-
-    <br>
-    <br>
-    <br>
-    <br>
 
     <div class="um-card">
 
@@ -193,7 +106,7 @@
 
                     @foreach ($user as $users)
 
-                    <tr>
+                    <tr data-created="{{ $users->created_at }}">
                         <td>
                             <div class="um-user">
                                 <div class="um-user-img">{{ substr($users->name, 0, 2) }}</div>
@@ -366,6 +279,124 @@
             .catch(error => {
                 console.log(error);
             });
+
+    }
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+
+        const searchInput = document.getElementById("userSearch");
+        const statusFilter = document.getElementById("statusFilter");
+        const dateFilter = document.getElementById("dateFilter");
+
+        // EVENT LISTENERS
+        searchInput.addEventListener("keyup", filterUsers);
+        statusFilter.addEventListener("change", filterUsers);
+        dateFilter.addEventListener("change", filterUsers);
+
+    });
+
+    function filterUsers() {
+
+        let search =
+            document.getElementById("userSearch")
+            .value
+            .toLowerCase();
+
+        let status =
+            document.getElementById("statusFilter")
+            .value
+            .toLowerCase();
+
+        let days =
+            document.getElementById("dateFilter")
+            .value;
+
+        let rows =
+            document.querySelectorAll(".um-table tbody tr");
+
+        rows.forEach(row => {
+
+            // NAME
+            let name =
+                row.querySelector("h4")
+                .innerText
+                .toLowerCase();
+
+            // EMAIL
+            let email =
+                row.querySelector("p")
+                .innerText
+                .toLowerCase();
+
+            // USER STATUS
+            let statusIcon =
+                row.querySelector(".toggle-status");
+
+            let userStatus =
+                statusIcon.dataset.status
+                .toLowerCase();
+
+            // CREATED DATE
+            let joinedDate =
+                new Date(row.dataset.created);
+
+            let today = new Date();
+
+            let diffTime = today - joinedDate;
+
+            let diffDays =
+                diffTime / (1000 * 60 * 60 * 24);
+
+            // SEARCH FILTER
+            let matchSearch =
+                name.includes(search) ||
+                email.includes(search);
+
+            // STATUS FILTER
+            let matchStatus =
+                status === "all" ||
+                userStatus === status;
+
+            // DATE FILTER
+            let matchDate = true;
+
+            if (days !== "all") {
+
+                matchDate =
+                    diffDays <= parseInt(days);
+
+            }
+
+            // FINAL SHOW / HIDE
+            if (
+                matchSearch &&
+                matchStatus &&
+                matchDate
+            ) {
+
+                row.style.display = "";
+
+            } else {
+
+                row.style.display = "none";
+
+            }
+
+        });
+
+    }
+
+    // RESET FILTERS
+    function resetUserFilters() {
+
+        document.getElementById("userSearch").value = "";
+
+        document.getElementById("statusFilter").value = "all";
+
+        document.getElementById("dateFilter").value = "30";
+
+        filterUsers();
 
     }
 </script>

@@ -4,6 +4,7 @@ use App\Http\Controllers\BannersController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CoustmerMedicineController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MedicineController;
 use App\Http\Controllers\OrdersController;
 use App\Http\Controllers\ProfileController;
@@ -19,9 +20,9 @@ Route::get('/', function () {
 //     return view('admin.setting');
 // })->name('settings.profile');
 
-Route::get('/dashboard', function () {
-    return view('admin.dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+// Route::get('/dashboard', function () {
+//     return view('admin.dashboard');
+// })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -73,6 +74,10 @@ Route::post('/admin/profile-update', [UserController::class, 'profileUpdate'])
     ->name('admin.profile.update');
 Route::post('/admin/role-store', [UserController::class, 'store'])
     ->name('admin.role.store');
+
+
+// Dashboard Route
+Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
 
 
 require __DIR__ . '/auth.php';
