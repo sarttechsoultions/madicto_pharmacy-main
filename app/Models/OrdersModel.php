@@ -25,6 +25,6 @@ class OrdersModel extends Model
 
     public function medicine()
     {
-        return $this->belongsTo(MedicineModel::class, 'medicine_id');
+        return $this->belongsTo(medicineModel::class, 'medicine_id');
     }
 }
