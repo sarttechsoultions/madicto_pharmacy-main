@@ -8,6 +8,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MedicineController;
 use App\Http\Controllers\OrdersController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -78,6 +79,9 @@ Route::post('/admin/role-store', [UserController::class, 'store'])
 
 // Dashboard Route
 Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
+
+// Review Route
+Route::get('/reviews', [ReviewController::class, 'index'])->name('reviews.index');
 
 
 require __DIR__ . '/auth.php';

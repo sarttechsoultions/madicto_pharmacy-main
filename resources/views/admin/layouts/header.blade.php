@@ -77,7 +77,7 @@
             <a class="nav-item" href="#">
                 <i class="fa-solid fa-bell"></i><span>Notifications</span>
             </a>
-            <a class="nav-item" href="#">
+            <a class="nav-item {{ request()->routeIs('reviews.index') ? 'active' : '' }}" href="{{ route('reviews.index') }}">
                 <i class="fa-solid fa-star"></i><span>Reviews</span>
             </a>
             <a class="nav-item {{ request()->routeIs('coustmer.medicine.index') ? 'active' : '' }}" href="{{ route('coustmer.medicine.index') }}">
