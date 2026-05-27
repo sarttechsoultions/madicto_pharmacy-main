@@ -21,14 +21,14 @@
                 <!-- EDIT BUTTON (FIXED) -->
                 <div class="st-edit" onclick="openProfileModal()">Edit</div>
 
-                <img src="{{ auth()->user()->profile_img ? asset('uploads/profile/' . auth()->user()->profile_img) : asset('uploads/profile/default.jpg') }}" class="st-user-img">
+                <img src="{{ asset('uploads/profile/' . (auth()->user()->profile_img ?? 'default.jpg')) }}" class="st-user-img">
 
                 <div class="st-camera">📷</div>
 
-                <h3>{{ auth()->user()->name }}</h3>
+                <h3>{{ auth()->user()->name ?? 'User' }}</h3>
 
                 <p>
-                    {{ auth()->user()->email }}
+                    {{ auth()->user()->email ?? 'Email not provided' }}
                 </p>
 
                 <div class="st-line"></div>
@@ -88,20 +88,20 @@
                             <tr>
 
                                 <td>
-                                    <strong>{{ $role->name }}</strong><br>
+                                    <strong>{{ $role->name ?? 'User' }}</strong><br>
                                     <span style="font-size:12px;color:#777;">
                                         Custom Role
                                     </span>
                                 </td>
 
-                                <td>{{ $role->email }}</td>
+                                <td>{{ $role->email ?? 'Email not provided' }}</td>
 
                                 <td>
                                     <span class="st-pill">ADMIN</span>
                                 </td>
 
                                 <td>
-                                    <span class="st-pill st-active-pill">{{ $role->status  }}</span>
+                                    <span class="st-pill st-active-pill">{{ $role->status ?? 'Status not provided' }}</span>
                                 </td>
 
 
@@ -138,11 +138,11 @@
 
             <input type="file" name="profile_img" class="form-control"><br>
 
-            <input type="text" name="name" value="{{ auth()->user()->name }}"><br>
+            <input type="text" name="name" value="{{ auth()->user()->name ?? 'User' }}"><br>
 
-            <input type="email" name="email" value="{{ auth()->user()->email }}"><br>
+            <input type="email" name="email" value="{{ auth()->user()->email ?? 'Email not provided' }}"><br>
 
-            <input type="text" name="number" value="{{ auth()->user()->number }}"><br>
+            <input type="text" name="number" value="{{ auth()->user()->number ?? 'Number not provided' }}"><br>
 
             <button type="submit">Update</button>
 

@@ -22,6 +22,8 @@ Route::get('/medicines', [api::class, 'getMedicines']);
 Route::get('/categories', [api::class, 'getCategory']);
 Route::get('/banners', [api::class, 'getBanners']);
 
+Route::get('/reviews/{medicine_id}', [api::class, 'index']);
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/orders', [api::class, 'getOrders']);
 
@@ -33,6 +35,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/update-profile', [api::class, 'updateProfile']);
     Route::get('/profile', [api::class, 'getProfile']);
+
+    Route::post('/review-add', [api::class, 'store']);
+
+    Route::put('/review-update/{id}', [api::class, 'update']);
+
+    Route::delete('/review-delete/{id}', [api::class, 'destroy']);
 
     Route::get('/referral', [api::class, 'shareReferral']);
     Route::post('/apply-referral', [api::class, 'applyReferralCode']);

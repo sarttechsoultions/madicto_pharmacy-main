@@ -17,4 +17,8 @@ class medicineModel extends Model
     {
         return $this->hasMany(OrdersModel::class, 'medicine_id');
     }
+    public function reviews()
+    {
+        return $this->hasMany(ReviewModel::class, 'medicine_id');
+    }
 }

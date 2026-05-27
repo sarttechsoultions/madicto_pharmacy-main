@@ -8,6 +8,7 @@ use App\Models\BannersModel;
 use App\Models\CategoryModel;
 use App\Models\medicineModel;
 use App\Models\OrdersModel;
+use App\Models\ReviewModel;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -315,6 +316,131 @@ class api extends Controller
             'message' => 'Referral code applied successfully',
             'your_wallet' => $user->wallet,
             'referred_by' => $user->referred_by
+        ]);
+    }
+
+    // GET REVIEWS
+    public function index($medicine_id)
+    {
+        $reviews = ReviewModel::with('coustmer')
+            ->where('medicine_id', $medicine_id)
+            ->latest()
+            ->get();
+
+        $averageRating = ReviewModel::where('medicine_id', $medicine_id)
+            ->avg('rating');
+
+        return response()->json([
+
+            'success' => true,
+
+            'average_rating' => round($averageRating, 1),
+
+            'total_reviews' => $reviews->count(),
+
+            'reviews' => $reviews
+
+        ]);
+    }
+
+    // ADD REVIEW
+    public function store(Request $request)
+    {
+        $request->validate([
+
+            'medicine_id' => 'required|exists:medicine,id',
+
+            'rating' => 'required|integer|min:1|max:5',
+
+            'review' => 'nullable|string'
+
+        ]);
+
+        $alreadyReviewed = ReviewModel::where('coustmer_id', auth()->id())
+            ->where('medicine_id', $request->medicine_id)
+            ->exists();
+
+        if ($alreadyReviewed) {
+
+            return response()->json([
+
+                'success' => false,
+
+                'message' => 'You already reviewed this medicine'
+
+            ], 400);
+        }
+
+        $review = ReviewModel::create([
+
+            'coustmer_id' => auth()->id(),
+
+            'medicine_id' => $request->medicine_id,
+
+            'rating' => $request->rating,
+
+            'review' => $request->review
+
+        ]);
+
+        return response()->json([
+
+            'success' => true,
+
+            'message' => 'Review added successfully',
+
+            'data' => $review
+
+        ]);
+    }
+
+    // UPDATE REVIEW
+    public function update(Request $request, $id)
+    {
+        $review = ReviewModel::where('coustmer_id', auth()->id())
+            ->findOrFail($id);
+
+        $request->validate([
+
+            'rating' => 'required|integer|min:1|max:5',
+
+            'review' => 'nullable|string'
+
+        ]);
+
+        $review->update([
+
+            'rating' => $request->rating,
+
+            'review' => $request->review
+
+        ]);
+
+        return response()->json([
+
+            'success' => true,
+
+            'message' => 'Review updated successfully',
+
+            'data' => $review
+
+        ]);
+    }
+
+    // DELETE REVIEW
+    public function destroy($id)
+    {
+        $review = ReviewModel::where('coustmer_id', auth()->id())
+            ->findOrFail($id);
+
+        $review->delete();
+
+        return response()->json([
+
+            'success' => true,
+
+            'message' => 'Review deleted successfully'
+
         ]);
     }
 
