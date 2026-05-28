@@ -363,6 +363,21 @@
          width: 100%;
      }
 
+
+     .stats-grid {
+         display: grid;
+         grid-template-columns: 1fr;
+         width: 320px;
+     }
+
+     .filter-bar {
+         width: 320px;
+     }
+
+     .table-card {
+         width: 320px;
+     }
+
      .oder-c-hover-preview {
          display: none !important;
      }
