@@ -116,6 +116,9 @@
             </table>
         </div>
     </div><!-- /content-left -->
+    <br>
+
+    <br>
 
     <!-- ── RIGHT PANEL ── -->
     <div class="content-right">

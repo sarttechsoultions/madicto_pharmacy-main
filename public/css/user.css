@@ -428,6 +428,10 @@
         align-items: flex-start;
     }
 
+    .stat-card {
+        width: 360px;
+    }
+
 }
 
 .role-btn {

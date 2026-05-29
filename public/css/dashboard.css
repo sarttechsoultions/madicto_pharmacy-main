@@ -554,7 +554,7 @@ tbody tr:hover {
     }
 
     .stat-card {
-        width: 320px;
+        width: 360px;
     }
 
     .content-left,
@@ -571,15 +571,15 @@ tbody tr:hover {
     }
 
     .page-header {
-        width: 320px;
+        width: 360px;
     }
 
     .chart-card {
-        width: 320px;
+        width: 360px;
     }
 
     .orders-card {
-        width: 320px;
+        width: 360px;
     }
 
     .chart-header,

@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="{{ asset('css/coustmer-medicine.css') }}">
     <link rel="stylesheet" href="{{ asset('css/setting.css') }}">
     <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/review.css') }}">
 
 </head>
 

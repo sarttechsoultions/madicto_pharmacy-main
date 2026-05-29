@@ -18,10 +18,6 @@
             </div>
         </div>
 
-        <div class="o-details-actions">
-            <button class="o-details-btn o-details-btn-outline">🖨 Print Label</button>
-            <button class="o-details-btn o-details-btn-primary">⇄ Update Status</button>
-        </div>
 
     </div>
 

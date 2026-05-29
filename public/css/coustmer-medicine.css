@@ -367,15 +367,15 @@
      .stats-grid {
          display: grid;
          grid-template-columns: 1fr;
-         width: 320px;
+         width: 360px;
      }
 
      .filter-bar {
-         width: 320px;
+         width: 360px;
      }
 
      .table-card {
-         width: 320px;
+         width: 360px;
      }
 
      .oder-c-hover-preview {
