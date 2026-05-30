@@ -157,6 +157,7 @@
 
     }
 </script>
+<script src="{{ asset('js/main.js') }}"></script>
 <script>
     const bmUploadBox = document.getElementById('bmUploadBox');
     const bmFileInput = document.getElementById('bmFileInput');

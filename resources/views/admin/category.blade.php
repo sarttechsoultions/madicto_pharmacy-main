@@ -279,6 +279,7 @@
 </div>
 
 <!-- ================= SCRIPT ================= -->
+<script src="{{ asset('js/main.js') }}"></script>
 <script>
     function openCategoryModal() {
         document.getElementById('categoryModal').style.display = 'flex';

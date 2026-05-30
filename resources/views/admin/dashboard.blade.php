@@ -234,6 +234,7 @@
 </div><!-- /main -->
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ asset('js/main.js') }}"></script>
 
 <script>
     const weeklyLabels = @json($weeklyLabels);

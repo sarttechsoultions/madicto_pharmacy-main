@@ -547,66 +547,68 @@ tbody tr:hover {
     }
 }
 
+/* ==========================
+   MOBILE FIX
+========================== */
+
+/* =========================
+   MOBILE SIDEBAR FIX
+========================= */
+
 @media (max-width: 768px) {
 
-    .content {
-        gap: 18px;
+    .sidebar {
+        position: fixed;
+        left: -280px;
+        top: 0;
+        width: 280px;
+        height: 100vh;
+        z-index: 9999;
+        transition: all .3s ease;
+        overflow-y: auto;
     }
 
-    .stat-card {
-        width: 360px;
+    .sidebar.active {
+        left: 0;
     }
 
-    .content-left,
-    .content-right {
-        gap: 18px;
+    .main-wrap {
+        margin-left: 0 !important;
+        width: 100% !important;
     }
 
-    .stat-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .page-header h1 {
-        font-size: 26px;
-    }
-
-    .page-header {
-        width: 360px;
-    }
-
-    .chart-card {
-        width: 360px;
-    }
-
-    .orders-card {
-        width: 360px;
-    }
-
-    .chart-header,
-    .orders-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 14px;
-    }
-
-    .toggle-group {
+    .topbar {
         width: 100%;
+        padding: 12px 15px;
     }
 
-    .toggle-btn {
+    .search-bar {
         flex: 1;
+        min-width: 0;
     }
 
-    .chart-area {
-        height: 260px;
+    .profile-pill {
+        display: none;
     }
 
-    table {
-        min-width: 650px;
+    .overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, .5);
+        z-index: 9998;
+    }
+
+    .overlay.active {
+        display: block;
     }
 }
 
 @media (max-width: 480px) {
+
+    .main-wrap {
+        padding: 12px;
+    }
 
     .page-header h1 {
         font-size: 22px;
@@ -623,40 +625,13 @@ tbody tr:hover {
 
     .btn {
         width: 100%;
-        font-size: 14px;
-    }
-
-    .stat-card,
-    .chart-card,
-    .orders-card,
-    .panel-card {
-        padding: 18px;
     }
 
     .stat-value {
-        font-size: 30px;
-    }
-
-    .chart-title,
-    .orders-title,
-    .panel-title {
-        font-size: 17px;
+        font-size: 28px;
     }
 
     .chart-area {
         height: 220px;
-    }
-
-    table {
-        min-width: 580px;
-    }
-
-    tbody td {
-        font-size: 14px;
-    }
-
-    .stock-name,
-    .med-name {
-        font-size: 14px;
     }
 }
