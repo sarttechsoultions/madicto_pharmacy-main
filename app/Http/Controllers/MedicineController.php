@@ -64,7 +64,7 @@ class MedicineController extends Controller
 
                 $image->move(public_path('uploads/medicine'), $imageName);
 
-                $data->image = $imageName;
+                $data->image = 'uploads/medicine/' . $imageName;
             }
 
             $data->save();

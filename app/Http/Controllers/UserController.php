@@ -65,6 +65,7 @@ class UserController extends Controller
         $imageName = $user->profile_img;
 
         // DEBUG CHECK (IMPORTANT)
+        $imagepath = null;
         if ($request->hasFile('profile_img')) {
 
             $image = $request->file('profile_img');
@@ -75,7 +76,7 @@ class UserController extends Controller
         }
 
         $user->update([
-            'profile_img' => $imageName,
+            'profile_img' => 'uploads/profile/' . $imageName,
             'name'        => $request->name,
             'email'       => $request->email,
             'number'      => $request->number,

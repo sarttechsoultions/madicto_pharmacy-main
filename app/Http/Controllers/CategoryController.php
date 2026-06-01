@@ -40,7 +40,7 @@ class CategoryController extends Controller
 
                 $image->move(public_path('uploads/category'), $imageName);
 
-                $category->icon = $imageName;
+                $category->icon = 'uploads/category/' . $imageName;
             }
             $category->save();
 
@@ -60,7 +60,7 @@ class CategoryController extends Controller
             $file = $request->file('icon');
             $filename = time() . '.' . $file->getClientOriginalExtension();
             $file->move(public_path('uploads/category'), $filename);
-            $data['icon'] = $filename;
+            $data['icon'] = 'uploads/category/' . $filename;
         }
 
         $category->update($data);

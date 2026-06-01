@@ -18,8 +18,8 @@ Route::post('/forgot-password', [auth::class, 'forgotPassword']);
 Route::post('/send-otp', [auth::class, 'sendOtp']);
 Route::post('/verify-otp', [auth::class, 'verifyOtp']);
 
-Route::get('/medicines', [api::class, 'getMedicines']);
-Route::get('/categories', [api::class, 'getCategory']);
+Route::get('/medicines/{id?}', [api::class, 'getMedicines']);
+Route::get('/categories/{id?}', [api::class, 'getCategory']);
 Route::get('/banners', [api::class, 'getBanners']);
 
 Route::get('/reviews/{medicine_id}', [api::class, 'index']);
@@ -45,4 +45,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/referral', [api::class, 'shareReferral']);
     Route::post('/apply-referral', [api::class, 'applyReferralCode']);
     Route::post('/logout', [api::class, 'logout']);
+
+
+    Route::get('/cart', [api::class, 'index']);
+    Route::post('/cart-add', [api::class, 'store']);
+    Route::put('/cart-update/{id}', [api::class, 'update']);
+    Route::delete('/cart-remove/{id}', [api::class, 'destroy']);
 });

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\AddressModel;
 use App\Models\BannersModel;
+use App\Models\CartModel;
 use App\Models\CategoryModel;
 use App\Models\medicineModel;
 use App\Models\OrdersModel;
@@ -20,20 +21,36 @@ use Illuminate\Support\Facades\File;
 class api extends Controller
 {
 
-    public function getMedicines(Request $request)
+    public function getMedicines(Request $request, $id = null)
     {
+        // Single medicine by ID
+        if ($id) {
+            $medicine = medicineModel::find($id);
+
+            if (!$medicine) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Medicine not found'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $medicine
+            ]);
+        }
+
+        // Multiple medicines with filters
         $query = medicineModel::query();
 
         if ($request->filled('name')) {
             $query->where('name', 'LIKE', '%' . $request->name . '%');
         }
 
-        // Filter by category_id
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->category_id);
         }
 
-        // Price range filter
         if ($request->filled('min_price')) {
             $query->where('price', '>=', $request->min_price);
         }
@@ -42,7 +59,6 @@ class api extends Controller
             $query->where('price', '<=', $request->max_price);
         }
 
-        // Filter by unit
         if ($request->filled('unit_type')) {
             $query->where('unit_type', $request->unit_type);
         }
@@ -55,23 +71,39 @@ class api extends Controller
         ]);
     }
 
-    public function getCategory(Request $request)
+    public function getCategory(Request $request, $id = null)
     {
-        $query = CategoryModel::query();
+        if ($id) {
+            $category = CategoryModel::find($id);
 
-        if ($request->filled('name')) {
-            $query->where('name', 'LIKE', '%' . $request->name . '%');
+            if (!$category) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Category not found'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $category
+            ]);
+        } {
+            $query = CategoryModel::query();
+
+            if ($request->filled('name')) {
+                $query->where('name', 'LIKE', '%' . $request->name . '%');
+            }
+            if ($request->filled('description')) {
+                $query->where('description', 'LIKE', '%' . $request->description . '%');
+            }
+
+            $categories = $query->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $categories
+            ]);
         }
-        if ($request->filled('description')) {
-            $query->where('description', 'LIKE', '%' . $request->description . '%');
-        }
-
-        $categories = $query->get();
-
-        return response()->json([
-            'success' => true,
-            'data' => $categories
-        ]);
     }
 
     public function getBanners()
@@ -132,7 +164,6 @@ class api extends Controller
     {
         $request->validate([
             'address_label' => ['required', 'string'],
-            'full_name' => ['required', 'string'],
             'phone_number' => ['required', 'string'],
             'street_address' => ['required', 'string'],
             'landmark' => ['required', 'string'],
@@ -144,7 +175,6 @@ class api extends Controller
         $address = AddressModel::create([
             'coustmer_id' => auth()->id(),
             'address_label' => $request->address_label,
-            'full_name' => $request->full_name,
             'phone_number' => $request->phone_number,
             'street_address' => $request->street_address,
             'landmark' => $request->landmark,
@@ -195,7 +225,6 @@ class api extends Controller
     public function updateProfile(Request $request)
     {
         $request->validate([
-            'name' => ['required', 'string', 'max:255'],
             'email' => ['nullable', 'email'],
             'number' => ['nullable', 'string', 'max:20'],
             'gender' => ['nullable', 'string', 'in:male,female,other'],
@@ -204,7 +233,7 @@ class api extends Controller
 
         $user = Auth::guard('sanctum')->user();
 
-        $user->name = $request->name;
+        $user->name = $request->name ?? 'User';
         $user->gender = $request->gender;
 
         if (!empty($user->email)) {
@@ -223,8 +252,8 @@ class api extends Controller
                 File::makeDirectory($path, 0777, true, true);
             }
 
-            if ($user->profile_img && File::exists($path . '/' . $user->profile_img)) {
-                File::delete($path . '/' . $user->profile_img);
+            if ($user->profile_img && File::exists(public_path($user->profile_img))) {
+                File::delete(public_path($user->profile_img));
             }
 
             $image = $request->file('profile_img');
@@ -233,7 +262,8 @@ class api extends Controller
 
             $image->move($path, $imageName);
 
-            $user->profile_img = $imageName;
+            // Save full relative path
+            $user->profile_img = 'uploads/profile/' . $imageName;
         }
 
         $user->save();
@@ -441,6 +471,82 @@ class api extends Controller
 
             'message' => 'Review deleted successfully'
 
+        ]);
+    }
+
+    public function index(Request $request)
+    {
+        $cart = CartModel::with('product')
+            ->where('user_id', $request->user()->id)
+            ->get();
+
+        return response()->json([
+            'status' => true,
+            'data' => $cart
+        ]);
+    }
+
+    // Add To Cart
+    public function store(Request $request)
+    {
+        $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'quantity' => 'required|integer|min:1'
+        ]);
+
+        $cart = CartModel::where('user_id', auth()->id())
+            ->where('product_id', $request->product_id)
+            ->first();
+
+        if ($cart) {
+            $cart->increment('quantity', $request->quantity);
+        } else {
+            $cart = CartModel::create([
+                'user_id' => auth()->id(),
+                'product_id' => $request->product_id,
+                'quantity' => $request->quantity
+            ]);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Product added to cart'
+        ]);
+    }
+
+    // Update Quantity
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'quantity' => 'required|integer|min:1'
+        ]);
+
+        $cart = CartModel::where('id', $id)
+            ->where('user_id', auth()->id())
+            ->firstOrFail();
+
+        $cart->update([
+            'quantity' => $request->quantity
+        ]);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Cart updated'
+        ]);
+    }
+
+    // Remove Item
+    public function destroy($id)
+    {
+        $cart = CartModel::where('id', $id)
+            ->where('user_id', auth()->id())
+            ->firstOrFail();
+
+        $cart->delete();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Item removed from cart'
         ]);
     }
 
