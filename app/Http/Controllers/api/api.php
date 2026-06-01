@@ -9,6 +9,7 @@ use App\Models\CartModel;
 use App\Models\CategoryModel;
 use App\Models\medicineModel;
 use App\Models\OrdersModel;
+use App\Models\OrderItemModel;
 use App\Models\ReviewModel;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
@@ -17,6 +18,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rules;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\DB;
 
 class api extends Controller
 {
@@ -116,39 +118,198 @@ class api extends Controller
     }
     public function getOrders()
     {
-        $orders = OrdersModel::with('medicine', 'user')->get();
+        $orders = OrdersModel::with('items')
+            ->where('coustmer_id', auth()->id())
+            ->latest()
+            ->get();
+
         return response()->json([
-            'success' => true,
+            'status' => true,
             'data' => $orders
+        ]);
+    }
+
+    public function orderDetail($id)
+    {
+        $order = OrdersModel::with('items')
+            ->where('id', $id)
+            ->where('user_id', auth()->id())
+            ->first();
+
+        if (!$order) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Order not found'
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => true,
+            'data' => $order
         ]);
     }
 
     public function OrdersCreated(Request $request)
     {
         $request->validate([
-            'medicine_id' => ['required', 'integer'],
-            'quantity' => ['required', 'integer'],
+            'address_id' => 'required|exists:address,id',
+            'medicine_id' => 'nullable|integer',
+            'quantity' => 'nullable|integer|min:1',
         ]);
 
-        $lastOrder = OrdersModel::latest('id')->first();
+        DB::beginTransaction();
 
-        $nextId = $lastOrder ? $lastOrder->id + 1 : 1;
+        try {
 
-        $orderId = 'ORD-' . $nextId;
+            $address = AddressModel::where('id', $request->address_id)
+                ->where('coustmer_id', auth()->id())
+                ->first();
 
-        $order = OrdersModel::create([
-            'order_id' => $orderId,
-            'user_id' => auth()->id(),
-            'medicine_id' => $request->medicine_id,
-            'quantity' => $request->quantity,
-            'processing_at' => now(),
-        ]);
+            if (!$address) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Address not found'
+                ], 404);
+            }
 
+            $lastOrder = OrdersModel::latest('id')->first();
+            $nextId = $lastOrder ? $lastOrder->id + 1 : 1;
 
-        return response()->json([
-            'message' => 'Order Created',
-            'order' => $order
-        ]);
+            $orderCode = 'ORD-' . str_pad($nextId, 5, '0', STR_PAD_LEFT);
+
+            $items = collect();
+            $subtotal = 0;
+
+            /*
+        |--------------------------------------------------------------------------
+        | Buy Now Flow
+        |--------------------------------------------------------------------------
+        */
+            if ($request->filled('medicine_id')) {
+
+                $medicine = MedicineModel::find($request->medicine_id);
+
+                if (!$medicine) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Medicine not found'
+                    ], 404);
+                }
+
+                $quantity = $request->quantity ?? 1;
+
+                $subtotal = $medicine->price * $quantity;
+
+                $items->push([
+                    'medicine_id' => $medicine->id,
+                    'medicine_name' => $medicine->name,
+                    'medicine_image' => $medicine->image,
+                    'price' => $medicine->price,
+                    'quantity' => $quantity,
+                    'subtotal' => $subtotal,
+                ]);
+            }
+
+            /*
+        |--------------------------------------------------------------------------
+        | Cart Checkout Flow
+        |--------------------------------------------------------------------------
+        */ else {
+
+                $cartItems = CartModel::with('medicine')
+                    ->where('coustmer_id', auth()->id())
+                    ->get();
+
+                if ($cartItems->isEmpty()) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Cart is empty'
+                    ], 404);
+                }
+
+                foreach ($cartItems as $item) {
+
+                    $lineTotal = $item->medicine->price * $item->quantity;
+
+                    $subtotal += $lineTotal;
+
+                    $items->push([
+                        'medicine_id' => $item->medicine_id,
+                        'medicine_name' => $item->medicine->name,
+                        'medicine_image' => $item->medicine->image,
+                        'price' => $item->medicine->price,
+                        'quantity' => $item->quantity,
+                        'subtotal' => $lineTotal,
+                    ]);
+                }
+            }
+
+            $shippingCharge = 0;
+            $discount = 0;
+            $totalAmount = $subtotal + $shippingCharge - $discount;
+
+            $order = OrdersModel::create([
+                'order_id' => $orderCode,
+                'coustmer_id' => auth()->id(),
+
+                'delivery_address_label' => $address->address_label,
+                'delivery_phone_number' => $address->phone_number,
+                'delivery_street_address' => $address->street_address,
+                'delivery_city' => $address->city,
+                'delivery_state' => $address->state,
+                'delivery_pin_code' => $address->pin_code,
+                'delivery_landmark' => $address->landmark,
+
+                'subtotal' => $subtotal,
+                'shipping_charge' => $shippingCharge,
+                'discount' => $discount,
+                'total_amount' => $totalAmount,
+
+                'status' => 'Ordered',
+                'ordered_at' => now(),
+            ]);
+
+            foreach ($items as $item) {
+
+                OrderItemModel::create([
+                    'order_id' => $order->id,
+
+                    'medicine_id' => $item['medicine_id'],
+                    'medicine_name' => $item['medicine_name'],
+                    'medicine_image' => $item['medicine_image'],
+
+                    'price' => $item['price'],
+                    'quantity' => $item['quantity'],
+                    'subtotal' => $item['subtotal'],
+                ]);
+            }
+
+            // Cart clear only when cart checkout
+            if (!$request->filled('medicine_id')) {
+
+                CartModel::where(
+                    'coustmer_id',
+                    auth()->id()
+                )->delete();
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Order placed successfully',
+                'order_id' => $orderCode,
+                'order_db_id' => $order->id
+            ]);
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function getAddresses()
@@ -184,23 +345,61 @@ class api extends Controller
         ]);
 
         return response()->json([
+            'status' => true,
             'message' => 'Address Created',
             'address' => $address
         ]);
     }
 
-    public function AddressDeleted(Request $request)
+    public function AddressUpdated(Request $request, $id)
     {
         $request->validate([
-            'address_id' => ['required', 'integer'],
+            'address_label' => ['required', 'string'],
+            'phone_number' => ['required', 'string'],
+            'street_address' => ['required', 'string'],
+            'landmark' => ['required', 'string'],
+            'city' => ['required', 'string'],
+            'state' => ['required', 'string'],
+            'pin_code' => ['required', 'string'],
         ]);
 
-        $address = AddressModel::where('id', $request->address_id)
+        $address = AddressModel::where('id', $id)
             ->where('coustmer_id', auth()->id())
             ->first();
 
         if (!$address) {
             return response()->json([
+                'status' => false,
+                'message' => 'Address not found'
+            ], 404);
+        }
+
+        $address->update([
+            'address_label' => $request->address_label,
+            'phone_number' => $request->phone_number,
+            'street_address' => $request->street_address,
+            'landmark' => $request->landmark,
+            'city' => $request->city,
+            'state' => $request->state,
+            'pin_code' => $request->pin_code,
+        ]);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Address updated successfully',
+            'data' => $address
+        ]);
+    }
+
+    public function AddressDeleted($id)
+    {
+        $address = AddressModel::where('id', $id)
+            ->where('coustmer_id', auth()->id())
+            ->first();
+
+        if (!$address) {
+            return response()->json([
+                'status' => false,
                 'message' => 'Address not found'
             ], 404);
         }
@@ -208,7 +407,8 @@ class api extends Controller
         $address->delete();
 
         return response()->json([
-            'message' => 'Address Deleted'
+            'status' => true,
+            'message' => 'Address deleted successfully'
         ]);
     }
 
@@ -474,10 +674,10 @@ class api extends Controller
         ]);
     }
 
-    public function index(Request $request)
+    public function carts(Request $request)
     {
-        $cart = CartModel::with('product')
-            ->where('user_id', $request->user()->id)
+        $cart = CartModel::with('medicine')
+            ->where('coustmer_id', auth()->id())
             ->get();
 
         return response()->json([
@@ -487,43 +687,51 @@ class api extends Controller
     }
 
     // Add To Cart
-    public function store(Request $request)
+    public function cartstore(Request $request)
     {
         $request->validate([
-            'product_id' => 'required|exists:products,id',
+            'medicine_id' => 'required|exists:medicine,id',
             'quantity' => 'required|integer|min:1'
         ]);
 
-        $cart = CartModel::where('user_id', auth()->id())
-            ->where('product_id', $request->product_id)
+        $cart = CartModel::where('coustmer_id', auth()->id())
+            ->where('medicine_id', $request->medicine_id)
             ->first();
 
         if ($cart) {
             $cart->increment('quantity', $request->quantity);
         } else {
             $cart = CartModel::create([
-                'user_id' => auth()->id(),
-                'product_id' => $request->product_id,
+                'coustmer_id' => auth()->id(),
+                'medicine_id' => $request->medicine_id,
                 'quantity' => $request->quantity
             ]);
         }
 
         return response()->json([
             'status' => true,
-            'message' => 'Product added to cart'
+            'message' => 'Medicine added to cart',
+            'data' => $cart
         ]);
     }
 
     // Update Quantity
-    public function update(Request $request, $id)
+    public function cartupdate(Request $request, $id)
     {
         $request->validate([
             'quantity' => 'required|integer|min:1'
         ]);
 
         $cart = CartModel::where('id', $id)
-            ->where('user_id', auth()->id())
-            ->firstOrFail();
+            ->where('coustmer_id', auth()->id())
+            ->first();
+
+        if (!$cart) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Cart item not found'
+            ], 404);
+        }
 
         $cart->update([
             'quantity' => $request->quantity
@@ -536,11 +744,18 @@ class api extends Controller
     }
 
     // Remove Item
-    public function destroy($id)
+    public function cartdestroy($id)
     {
         $cart = CartModel::where('id', $id)
-            ->where('user_id', auth()->id())
-            ->firstOrFail();
+            ->where('coustmer_id', auth()->id())
+            ->first();
+
+        if (!$cart) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Cart item not found'
+            ], 404);
+        }
 
         $cart->delete();
 

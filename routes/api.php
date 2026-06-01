@@ -26,12 +26,14 @@ Route::get('/reviews/{medicine_id}', [api::class, 'index']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/orders', [api::class, 'getOrders']);
+    Route::get('/order-detail/{id}', [api::class, 'orderDetail']);
 
     Route::post('/orders-created', [api::class, 'OrdersCreated']);
 
     Route::get('/addresses', [api::class, 'getAddresses']);
     Route::post('/address-created', [api::class, 'AddressCreated']);
-    Route::post('/address-deleted', [api::class, 'AddressDeleted']);
+    Route::post('/address-updated/{id?}', [api::class, 'AddressUpdated']);
+    Route::post('/address-deleted/{id?}', [api::class, 'AddressDeleted']);
 
     Route::post('/update-profile', [api::class, 'updateProfile']);
     Route::get('/profile', [api::class, 'getProfile']);
@@ -46,9 +48,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/apply-referral', [api::class, 'applyReferralCode']);
     Route::post('/logout', [api::class, 'logout']);
 
+    Route::get('/cart', [api::class, 'carts']);
 
-    Route::get('/cart', [api::class, 'index']);
-    Route::post('/cart-add', [api::class, 'store']);
-    Route::put('/cart-update/{id}', [api::class, 'update']);
-    Route::delete('/cart-remove/{id}', [api::class, 'destroy']);
+    Route::post('/cart-add', [api::class, 'cartstore']);
+    Route::post('/cart-update/{id}', [api::class, 'cartupdate']);
+    Route::post('/cart-remove/{id}', [api::class, 'cartdestroy']);
 });
