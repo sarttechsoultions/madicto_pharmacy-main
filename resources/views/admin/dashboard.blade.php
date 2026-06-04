@@ -108,7 +108,19 @@
                     <tr>
                         <td><span class="order-id">{{ $order->order_id }}</span></td>
                         <td><span class="patient-name">{{ $order->user->name ?? 'N/A' }}</span></td>
-                        <td><span class="medicine-name">{{ $order->medicine->name ?? 'N/A' }}</span></td>
+                        <td><span class="medicine-name">@foreach($order->items->take(2) as $item)
+
+                                {{ $item->medicine_name }}
+
+                                <br>
+
+                                @endforeach
+
+                                @if($order->items->count() > 2)
+
+                                +{{ $order->items->count() - 2 }} more
+
+                                @endif</span></td>
                         <td><span class="status-badge {{ $order->status === 'Shipped' ? 'status-shipped' : ($order->status === 'Pending' ? 'status-pending' : 'status-cancelled') }}">{{ $order->status ?? 'N/A' }}</span></td>
                     </tr>
                     @endforeach
@@ -193,7 +205,7 @@
                 <div class="med-info">
 
                     <div class="med-name">
-                        {{ $item->medicine->name ?? 'N/A' }}
+                        {{ $item->medicine_name }}
                     </div>
 
                     <div class="progress-bar-bg">

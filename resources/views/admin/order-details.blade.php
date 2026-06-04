@@ -29,7 +29,7 @@
 
                 <div class="o-details-card-header">
                     <h3>Ordered Items</h3>
-                    <span>3 Items</span>
+                    <span>{{ $order->items->count() }} Items</span>
                 </div>
 
                 <div class="o-details-table-wrap">
@@ -46,40 +46,93 @@
 
                         <tbody>
                             @php
-                            $subtotal = 0;
-                            @endphp
 
-                            @foreach($customerOrders as $order)
+                            $timeline = [
 
-                            @php
-                            $subtotal += $order->quantity * $order->medicine->price;
+                            [
+                            'title' => 'Ordered',
+                            'time' => $order->ordered_at,
+                            'done' => !empty($order->ordered_at)
+                            ],
+
+                            [
+                            'title' => 'Confirmed',
+                            'time' => $order->confirmed_at,
+                            'done' => !empty($order->confirmed_at)
+                            ],
+
+                            [
+                            'title' => 'Processing',
+                            'time' => $order->processing_at,
+                            'done' => !empty($order->processing_at)
+                            ],
+
+                            [
+                            'title' => 'Out For Delivery',
+                            'time' => $order->out_for_delivery_at,
+                            'done' => !empty($order->out_for_delivery_at)
+                            ],
+
+                            [
+                            'title' => 'Delivered',
+                            'time' => $order->delivered_at,
+                            'done' => !empty($order->delivered_at)
+                            ]
+
+                            ];
+
                             @endphp
+                            @foreach($order->items as $item)
+
 
                             <tr>
+
                                 <td>
+
                                     <div class="o-details-product">
+
                                         <div class="med-thumb">
-                                            <img src="{{ asset('uploads/medicine/' . $order->medicine->image) }}" alt="">
+
+                                            <img
+                                                src="{{ asset('uploads/medicine/'.$item->medicine_image) }}"
+                                                alt="">
+
                                         </div>
+
                                         <div>
-                                            <strong>{{ $order->medicine->name ?? 'N/A' }}</strong>
-                                            <p>{{ $order->medicine->description ?? 'N/A' }}</p>
+
+                                            <strong>
+                                                {{ $item->medicine_name }}
+                                            </strong>
+
                                         </div>
+
                                     </div>
+
                                 </td>
-
-                                <td>{{ $order->quantity }}</td>
-
-                                <td>₹ {{ number_format($order->medicine->price, 2) }}</td>
 
                                 <td>
-                                    <strong>
-                                        ₹ {{ number_format($order->quantity * $order->medicine->price, 2) }}
-                                    </strong>
+                                    {{ $item->quantity }}
                                 </td>
+
+                                <td>
+                                    ₹ {{ number_format($item->price,2) }}
+                                </td>
+
+                                <td>
+
+                                    <strong>
+
+                                        ₹ {{ number_format($item->quantity * $item->price, 2) }}
+
+                                    </strong>
+
+                                </td>
+
                             </tr>
 
                             @endforeach
+
                         </tbody>
 
                     </table>
@@ -91,7 +144,7 @@
 
                         <div class="o-details-total-row o-details-grand">
                             <span>Total</span>
-                            <span>₹ {{ number_format($subtotal , 2) }}</span>
+                            <span>₹ {{ number_format($order->total_amount , 2) }}</span>
                         </div>
 
                     </div>
@@ -129,9 +182,25 @@
                     <div class="o-details-info">
                         <h5>SHIPPING ADDRESS</h5>
                         <p>
-                            482 Willow Creek Drive <br>
-                            Apt 4B, Health District <br>
-                            Metropolis, NY 10012
+
+                            {{ $order->delivery_street_address }}
+
+                            <br>
+
+                            {{ $order->delivery_landmark }}
+
+                            <br>
+
+                            {{ $order->delivery_city }}
+
+                            ,
+
+                            {{ $order->delivery_state }}
+
+                            -
+
+                            {{ $order->delivery_pin_code }}
+
                         </p>
                     </div>
 

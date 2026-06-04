@@ -9,7 +9,7 @@ class UserController extends Controller
 {
     public function index()
     {
-        $user = User::where('role', '2')->paginate(20);
+        $user = User::where('role', '2')->with('orders')->paginate(20);
         $adminss = User::where('role', '1')->paginate(20);
         $userall = User::count();
         $useractive = User::where('status', 'Active')->count();

@@ -23,8 +23,6 @@
 
   </div>
 
-  <!-- CARDS -->
-
   <div class="od-cards">
 
     <div class="od-card">
@@ -48,8 +46,6 @@
     </div>
 
   </div>
-
-  <!-- TABLE -->
 
   <div class="od-table-box">
 
@@ -81,9 +77,9 @@
           <tr>
             <th>ID</th>
             <th>CUSTOMER</th>
-            <th>MEDICINES</th>
             <th>PAYMENT</th>
             <th>STATUS</th>
+            <th>Products</th>
             <th>AMOUNT</th>
             <th>DATE</th>
             <th>ACTION</th>
@@ -111,10 +107,6 @@
 
                 </div>
               </a>
-            </td>
-
-            <td>
-              <div class="od-medicine">{{ $order->medicine->name }}</div>
             </td>
 
             <!-- PAYMENT STATUS -->
@@ -146,12 +138,23 @@
             <!-- ORDER STATUS -->
             <td>
 
-              <select class="od-status-select"
+              <select
+                class="od-status-select"
                 onchange="updateOrderStatus(this.value, {{ $order->id }})">
 
                 <option value="Pending"
                   @selected($order->status == 'Pending')>
                   ● Pending
+                </option>
+
+                <option value="Confirmed"
+                  @selected($order->status == 'Confirmed')>
+                  ● Confirmed
+                </option>
+
+                <option value="Processing"
+                  @selected($order->status == 'Processing')>
+                  ● Processing
                 </option>
 
                 <option value="Shipped"
@@ -164,12 +167,47 @@
                   ● Delivered
                 </option>
 
+                <option value="Cancelled"
+                  @selected($order->status == 'Cancelled')>
+                  ● Cancelled
+                </option>
+
               </select>
 
             </td>
+            <td>
 
+              @foreach($order->items as $item)
 
-            <td><strong>₹ {{ $order->medicine->price }}</strong></td>
+              <div style="margin-bottom:5px">
+
+                {{ $item->medicine_name }}
+
+                ×
+
+                {{ $item->quantity }}
+
+              </div>
+
+              @endforeach
+
+            </td>
+
+            <td>
+              <strong>
+                ₹ {{ number_format($order->total_amount,2) }}
+              </strong>
+
+              <br>
+
+              <small>
+
+                {{ $order->items->count() }}
+
+                Item(s)
+
+              </small>
+            </td>
 
             <td>{{ $order->created_at->format('M j, Y') }}</td>
 

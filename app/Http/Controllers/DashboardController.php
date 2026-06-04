@@ -23,20 +23,33 @@ class DashboardController extends Controller
 
         $totalmedicine = medicineModel::count();
 
-        $recentorders = OrdersModel::orderBy('created_at', 'desc')
+        // RECENT ORDERS
+        $recentorders = OrdersModel::with([
+            'user',
+            'items'
+        ])
+            ->latest()
             ->take(5)
             ->get();
 
-        $lowstockmedicines = medicineModel::where('quantity', '<', 10)
-            ->get();
+        // LOW STOCK
+        $lowstockmedicines = medicineModel::where(
+            'quantity',
+            '<',
+            10
+        )->get();
 
-        // TOP SELLING
-        $topSellingMedicines = OrdersModel::select(
-            'medicine_id',
-            DB::raw('COUNT(*) as total_sales')
-        )
-            ->with('medicine')
-            ->groupBy('medicine_id')
+        // TOP SELLING MEDICINES
+        $topSellingMedicines = DB::table('order_items')
+            ->select(
+                'medicine_id',
+                'medicine_name',
+                DB::raw('SUM(quantity) as total_sales')
+            )
+            ->groupBy(
+                'medicine_id',
+                'medicine_name'
+            )
             ->orderByDesc('total_sales')
             ->take(5)
             ->get();
@@ -52,18 +65,12 @@ class DashboardController extends Controller
         }
 
         // WEEKLY REVENUE
-        $weeklyRevenue = OrdersModel::join(
-            'medicine',
-            'orders.medicine_id',
-            '=',
-            'medicine.id'
+        $weeklyRevenue = OrdersModel::select(
+            DB::raw('DATE(created_at) as date'),
+            DB::raw('SUM(total_amount) as revenue')
         )
-            ->select(
-                DB::raw('DATE(orders.created_at) as date'),
-                DB::raw('SUM(medicine.price) as revenue')
-            )
             ->whereDate(
-                'orders.created_at',
+                'created_at',
                 '>=',
                 Carbon::now()->subDays(6)
             )
@@ -72,18 +79,12 @@ class DashboardController extends Controller
             ->get();
 
         // MONTHLY REVENUE
-        $monthlyRevenue = OrdersModel::join(
-            'medicine',
-            'orders.medicine_id',
-            '=',
-            'medicine.id'
+        $monthlyRevenue = OrdersModel::select(
+            DB::raw('MONTH(created_at) as month'),
+            DB::raw('SUM(total_amount) as revenue')
         )
-            ->select(
-                DB::raw('MONTH(orders.created_at) as month'),
-                DB::raw('SUM(medicine.price) as revenue')
-            )
             ->whereYear(
-                'orders.created_at',
+                'created_at',
                 Carbon::now()->year
             )
             ->groupBy('month')
@@ -92,29 +93,48 @@ class DashboardController extends Controller
 
         // CHART DATA
         $weeklyLabels = $weeklyRevenue->map(function ($item) {
-            return Carbon::parse($item->date)->format('D');
+
+            return Carbon::parse(
+                $item->date
+            )->format('D');
         });
 
-        $weeklyData = $weeklyRevenue->pluck('revenue');
+        $weeklyData = $weeklyRevenue->pluck(
+            'revenue'
+        );
 
         $monthlyLabels = $monthlyRevenue->map(function ($item) {
-            return Carbon::create()->month($item->month)->format('M');
+
+            return Carbon::create()
+                ->month($item->month)
+                ->format('M');
         });
 
-        $monthlyData = $monthlyRevenue->pluck('revenue');
+        $monthlyData = $monthlyRevenue->pluck(
+            'revenue'
+        );
 
-        return view('admin.dashboard', compact(
-            'totalorders',
-            'totalcoustmermedicine',
-            'useractive',
-            'totalmedicine',
-            'recentorders',
-            'lowstockmedicines',
-            'topSellingMedicines',
-            'weeklyLabels',
-            'weeklyData',
-            'monthlyLabels',
-            'monthlyData'
-        ));
+        // TOTAL REVENUE
+        $totalRevenue = OrdersModel::sum(
+            'total_amount'
+        );
+
+        return view(
+            'admin.dashboard',
+            compact(
+                'totalorders',
+                'totalcoustmermedicine',
+                'useractive',
+                'totalmedicine',
+                'recentorders',
+                'lowstockmedicines',
+                'topSellingMedicines',
+                'weeklyLabels',
+                'weeklyData',
+                'monthlyLabels',
+                'monthlyData',
+                'totalRevenue'
+            )
+        );
     }
 }

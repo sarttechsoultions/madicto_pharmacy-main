@@ -21,7 +21,7 @@
                 <!-- EDIT BUTTON (FIXED) -->
                 <div class="st-edit" onclick="openProfileModal()">Edit</div>
 
-                <img src="{{ asset('uploads/profile/' . (auth()->user()->profile_img ?? 'default.jpg')) }}" class="st-user-img">
+                <img src="{{ asset( (auth()->user()->profile_img ?? 'default.jpg')) }}" class="st-user-img">
 
                 <div class="st-camera">📷</div>
 
@@ -32,16 +32,6 @@
                 </p>
 
                 <div class="st-line"></div>
-
-                <div class="st-info">
-                    <span>Last login</span>
-                    <strong>2 hours ago</strong>
-                </div>
-
-                <div class="st-info">
-                    <span>Clinic ID</span>
-                    <strong>MF-88291-TX</strong>
-                </div>
 
             </div>
 

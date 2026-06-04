@@ -73,6 +73,54 @@ class api extends Controller
         ]);
     }
 
+    public function relatedMedicines($id)
+    {
+        $medicine = medicineModel::find($id);
+
+        if (!$medicine) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Medicine not found'
+            ], 404);
+        }
+
+        $relatedMedicines = medicineModel::where('id', '!=', $medicine->id)
+            ->where(function ($query) use ($medicine) {
+
+                $query->where(
+                    'category_id',
+                    $medicine->category_id
+                );
+
+                if (!empty($medicine->description)) {
+
+                    $words = explode(
+                        ' ',
+                        trim($medicine->description)
+                    );
+
+                    foreach ($words as $word) {
+
+                        if (strlen($word) > 3) {
+
+                            $query->orWhere(
+                                'description',
+                                'LIKE',
+                                '%' . $word . '%'
+                            );
+                        }
+                    }
+                }
+            })
+            ->take(10)
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $relatedMedicines
+        ]);
+    }
+
     public function getCategory(Request $request, $id = null)
     {
         if ($id) {
@@ -155,6 +203,7 @@ class api extends Controller
             'address_id' => 'required|exists:address,id',
             'medicine_id' => 'nullable|integer',
             'quantity' => 'nullable|integer|min:1',
+            'wallet_amount' => 'nullable|numeric|min:0',
         ]);
 
         DB::beginTransaction();
@@ -248,6 +297,46 @@ class api extends Controller
             $discount = 0;
             $totalAmount = $subtotal + $shippingCharge - $discount;
 
+            /*
+|--------------------------------------------------------------------------
+| Wallet Logic
+|--------------------------------------------------------------------------
+*/
+
+            $user = User::find(auth()->id());
+
+            $walletUsed = $request->wallet_amount ?? 0;
+
+            // Safety checks
+
+            if ($walletUsed > $user->wallet) {
+
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Insufficient wallet balance'
+                ], 422);
+            }
+
+            // Wallet total amount se jyada nahi ho sakta
+
+            if ($walletUsed > $totalAmount) {
+                $walletUsed = $totalAmount;
+            }
+
+            // Final payable amount
+
+            $finalAmount = $totalAmount - $walletUsed;
+
+            // Wallet deduct
+
+            if ($walletUsed > 0) {
+
+                $user->wallet =
+                    $user->wallet - $walletUsed;
+
+                $user->save();
+            }
+
             $order = OrdersModel::create([
                 'order_id' => $orderCode,
                 'coustmer_id' => auth()->id(),
@@ -262,8 +351,8 @@ class api extends Controller
 
                 'subtotal' => $subtotal,
                 'shipping_charge' => $shippingCharge,
-                'discount' => $discount,
-                'total_amount' => $totalAmount,
+                'discount' => $walletUsed,
+                'total_amount' => $finalAmount,
 
                 'status' => 'Ordered',
                 'ordered_at' => now(),

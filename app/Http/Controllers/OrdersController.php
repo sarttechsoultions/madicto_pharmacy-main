@@ -10,37 +10,67 @@ class OrdersController extends Controller
 {
     public function index()
     {
-        $orders = OrdersModel::paginate(20);
-        $ordertotal = OrdersModel::where('status', 'Pending')->count();
+        $orders = OrdersModel::with([
+            'user',
+            'items'
+        ])
+            ->latest()
+            ->paginate(20);
+
+        $ordertotal = OrdersModel::where('status', 'Ordered')->count();
+
         $orderdelivered = OrdersModel::where('status', 'Delivered')->count();
+
         $paymentpending = OrdersModel::where('payment_status', 'Pending')->count();
+
         $paymentpaid = OrdersModel::where('payment_status', 'Paid')->count();
 
-        return view('admin.orders', compact('orders', 'ordertotal', 'orderdelivered', 'paymentpending', 'paymentpaid'));
+        return view(
+            'admin.orders',
+            compact(
+                'orders',
+                'ordertotal',
+                'orderdelivered',
+                'paymentpending',
+                'paymentpaid'
+            )
+        );
     }
 
     public function updateOrderStatus(Request $request)
     {
-        $order = OrdersModel::find($request->id);
+        $order = OrdersModel::findOrFail($request->id);
 
         $order->status = $request->status;
 
-        if ($request->status == 'Pending') {
-            $order->processing_at = now();
-        }
+        switch ($request->status) {
 
-        if ($request->status == 'Shipped') {
-            $order->shipped_at = now();
-        }
+            case 'Confirmed':
+                $order->confirmed_at = now();
+                break;
 
-        if ($request->status == 'Delivered') {
-            $order->delivered_at = now();
+            case 'Processing':
+                $order->processing_at = now();
+                break;
+
+            case 'Shipped':
+                $order->out_for_delivery_at = now();
+                break;
+
+            case 'Delivered':
+                $order->delivered_at = now();
+                break;
+
+            case 'Cancelled':
+                $order->cancelled_at = now();
+                break;
         }
 
         $order->save();
 
         return response()->json([
-            'success' => true
+            'success' => true,
+            'message' => 'Order status updated'
         ]);
     }
 
@@ -59,13 +89,12 @@ class OrdersController extends Controller
 
     public function details($id)
     {
-        $order = OrdersModel::with(['user', 'medicine'])->findOrFail($id);
+        $order = OrdersModel::with([
+            'user',
+            'items'
+        ])->findOrFail($id);
 
-        $customerOrders = OrdersModel::with('medicine')
-            ->where('user_id', $order->user_id)
-            ->get();
-
-        return view('admin.order-details', compact('order', 'customerOrders'));
+        return view('admin.order-details', compact('order'));
     }
 
     public function destroy($id)
