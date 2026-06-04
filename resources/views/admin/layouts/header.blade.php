@@ -61,7 +61,7 @@
             <div class="nav-label" style="margin-top:10px;">Management</div>
             <a class="nav-item {{ request()->routeIs('user.index') ? 'active' : '' }}" href="{{ route('user.index') }}">
                 <i class="fa-solid fa-users"></i><span>Users</span>
-                <span class="nav-badge">{{ auth()->user()->count() }}</span>
+                <span class="nav-badge">{{ auth()->user()->count() ?? 0 }}</span>
             </a>
             <a class="nav-item" href="#">
                 <i class="fa-solid fa-boxes-stacked"></i><span>Inventory</span>
