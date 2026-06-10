@@ -32,7 +32,7 @@ class MedicineController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'price' => 'required',
-            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'image.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
         try {
@@ -55,17 +55,22 @@ class MedicineController extends Controller
             $data->manufacture_date = $request->manufacture_date;
             $data->expiry_date = $request->expiry_date;
 
-            // Image Upload
+            $images = [];
+
             if ($request->hasFile('image')) {
 
-                $image = $request->file('image');
+                foreach ($request->file('image') as $img) {
 
-                $imageName = time() . '.' . $image->getClientOriginalExtension();
+                    $imageName = time() . '_' . uniqid() . '.' . $img->getClientOriginalExtension();
 
-                $image->move(public_path('uploads/medicine'), $imageName);
+                    $img->move(public_path('uploads/medicine'), $imageName);
+                    $data->image = 'uploads/medicine/' . $imageName;
 
-                $data->image = 'uploads/medicine/' . $imageName;
+                    $images[] = $imageName;
+                }
             }
+
+            $data->image = json_encode($images);
 
             $data->save();
 

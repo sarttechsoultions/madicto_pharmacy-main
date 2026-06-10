@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class medicineModel extends Model
 {
     protected $table = 'medicine';
+    protected $casts = [
+        'image' => 'array',
+    ];
 
     public function category()
     {

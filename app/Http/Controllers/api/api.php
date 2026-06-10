@@ -7,6 +7,7 @@ use App\Models\AddressModel;
 use App\Models\BannersModel;
 use App\Models\CartModel;
 use App\Models\CategoryModel;
+use App\Models\MedicineFavourite;
 use App\Models\medicineModel;
 use App\Models\OrdersModel;
 use App\Models\OrderItemModel;
@@ -154,6 +155,24 @@ class api extends Controller
                 'data' => $categories
             ]);
         }
+    }
+
+    public function categoryIsAvailable()
+    {
+        $categories = CategoryModel::withCount('medicines')->get();
+
+        $data = $categories->map(function ($category) {
+            return [
+                'id' => $category->id,
+                'name' => $category->name,
+                'is_available' => $category->medicines_count > 0,
+            ];
+        });
+
+        return response()->json([
+            'status' => true,
+            'data' => $data
+        ]);
     }
 
     public function getBanners()
@@ -413,6 +432,7 @@ class api extends Controller
     public function AddressCreated(Request $request)
     {
         $request->validate([
+            'full_name' => ['required', 'string'],
             'address_label' => ['required', 'string'],
             'phone_number' => ['required', 'string'],
             'street_address' => ['required', 'string'],
@@ -420,10 +440,18 @@ class api extends Controller
             'city' => ['required', 'string'],
             'state' => ['required', 'string'],
             'pin_code' => ['required', 'string'],
+            'is_default' => ['nullable', 'boolean'],
         ]);
+
+        // Agar default address select kiya hai
+        if ($request->boolean('is_default')) {
+            AddressModel::where('coustmer_id', auth()->id())
+                ->update(['is_default' => false]);
+        }
 
         $address = AddressModel::create([
             'coustmer_id' => auth()->id(),
+            'full_name' => $request->full_name,
             'address_label' => $request->address_label,
             'phone_number' => $request->phone_number,
             'street_address' => $request->street_address,
@@ -431,6 +459,7 @@ class api extends Controller
             'city' => $request->city,
             'state' => $request->state,
             'pin_code' => $request->pin_code,
+            'is_default' => $request->boolean('is_default'),
         ]);
 
         return response()->json([
@@ -443,6 +472,7 @@ class api extends Controller
     public function AddressUpdated(Request $request, $id)
     {
         $request->validate([
+            'full_name' => ['required', 'string'],
             'address_label' => ['required', 'string'],
             'phone_number' => ['required', 'string'],
             'street_address' => ['required', 'string'],
@@ -464,6 +494,7 @@ class api extends Controller
         }
 
         $address->update([
+            'full_name' => $request->full_name,
             'address_label' => $request->address_label,
             'phone_number' => $request->phone_number,
             'street_address' => $request->street_address,
@@ -851,6 +882,88 @@ class api extends Controller
         return response()->json([
             'status' => true,
             'message' => 'Item removed from cart'
+        ]);
+    }
+
+    public function toggleFavourite(Request $request)
+    {
+        $request->validate([
+            'medicine_id' => 'required|exists:medicine,id',
+        ]);
+
+        $favourite = MedicineFavourite::where([
+            'coustmer_id' => auth()->id(),
+            'medicine_id' => $request->medicine_id,
+        ])->first();
+
+        if ($favourite) {
+
+            $favourite->delete();
+
+            return response()->json([
+                'status' => true,
+                'is_favourite' => false,
+                'message' => 'Medicine removed from favourites'
+            ]);
+        }
+
+        MedicineFavourite::create([
+            'coustmer_id' => auth()->id(),
+            'medicine_id' => $request->medicine_id,
+        ]);
+
+        return response()->json([
+            'status' => true,
+            'is_favourite' => true,
+            'message' => 'Medicine added to favourites'
+        ]);
+    }
+
+    public function favouriteMedicines()
+    {
+
+        $medicineIds = MedicineFavourite::where('coustmer_id', auth()->id())
+            ->pluck('medicine_id');
+
+        $medicines = medicineModel::whereIn('id', $medicineIds)->get();
+
+        return response()->json([
+            'status' => true,
+            'data' => $medicines
+        ]);
+    }
+
+    public function trendingProducts()
+    {
+        $medicines = medicineModel::withCount('reviews')
+            ->withAvg('reviews', 'rating')
+            ->orderByDesc('reviews_count')
+            ->take(10)
+            ->get();
+
+        return response()->json([
+            'status' => true,
+            'data' => $medicines
+        ]);
+    }
+
+    public function dealsOfDay()
+    {
+        $medicines = medicineModel::where('discount', '>', 0)
+            ->orderByDesc('discount')
+            ->take(10)
+            ->get()
+            ->map(function ($item) {
+
+                $item->final_price = $item->price -
+                    (($item->price * $item->discount) / 100);
+
+                return $item;
+            });
+
+        return response()->json([
+            'status' => true,
+            'data' => $medicines
         ]);
     }
 

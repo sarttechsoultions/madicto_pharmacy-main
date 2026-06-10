@@ -113,7 +113,9 @@
                         </td>
                         <td>
                             <div class="med-thumb">
-                                <img src="{{ asset('uploads/medicine/' . $medicine->image) }}" alt="Medicine Image">
+                                @foreach(json_decode($medicine->image, true) ?? [] as $img)
+                                <img src="{{ asset('uploads/medicine/'.$img) }}">
+                                @endforeach
                             </div>
                         </td>
                         <td>
@@ -305,10 +307,21 @@
                         <div class="m-section">
                             <div class="m-section-title"><i class="fa-regular fa-image"></i> Product Media</div>
                             <div class="upload-zone" onclick="document.getElementById('imgInput').click()">
-                                <input type="file" id="imgInput" name="image" accept="image/*" onchange="previewImage(event)" />
+                                <input
+                                    type="file"
+                                    id="imgInput"
+                                    name="image[]"
+                                    accept="image/*"
+                                    multiple
+                                    onchange="previewImages(event)"
+                                    hidden>
+
                                 <i class="fa-solid fa-cloud-arrow-up"></i>
-                                <strong>Click to upload image</strong>
+                                <strong>Click to upload images</strong>
                                 <span>PNG, JPG up to 10MB</span>
+                            </div>
+
+                            <div class="media-thumbs" id="previewContainer">
                             </div>
                             <div class="media-thumbs">
                                 <div class="media-thumb" id="thumb1"></div>
@@ -617,6 +630,34 @@
         document.getElementById("sortFilter").selectedIndex = 0;
 
         filterTable();
+    }
+</script>
+
+<script>
+    function previewImages(event) {
+        let container = document.getElementById('previewContainer');
+
+        // Purani preview remove
+        container.innerHTML = '';
+
+        Array.from(event.target.files).forEach((file) => {
+
+            let reader = new FileReader();
+
+            reader.onload = function(e) {
+                let thumb = document.createElement('div');
+                thumb.classList.add('media-thumb');
+
+                thumb.innerHTML = `
+                <img src="${e.target.result}"
+                     style="width:100%;height:100%;object-fit:cover;border-radius:10px;">
+            `;
+
+                container.appendChild(thumb);
+            }
+
+            reader.readAsDataURL(file);
+        });
     }
 </script>
 

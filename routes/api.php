@@ -24,6 +24,9 @@ Route::get('/categories/{id?}', [api::class, 'getCategory']);
 Route::get('/banners', [api::class, 'getBanners']);
 
 Route::get('/reviews/{medicine_id}', [api::class, 'index']);
+Route::get('/trending-medicine', [api::class, 'trendingProducts']);
+Route::get('/deals-of-day', [api::class, 'dealsOfDay']);
+Route::get('/category-is-available', [api::class, 'categoryIsAvailable']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/orders', [api::class, 'getOrders']);
@@ -54,4 +57,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/cart-add', [api::class, 'cartstore']);
     Route::post('/cart-update/{id}', [api::class, 'cartupdate']);
     Route::post('/cart-remove/{id}', [api::class, 'cartdestroy']);
+
+    Route::post('/medicine-favourite', [api::class, 'toggleFavourite']);
+    Route::get('/favourite-medicines', [api::class, 'favouriteMedicines']);
 });
