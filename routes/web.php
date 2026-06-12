@@ -12,9 +12,12 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('web.index');
-});
+
+Route::get('/', [DashboardController::class, 'webIndex'])->name('home');
+
+Route::get('/privacy', function () {
+    return view('web.privacy');
+})->name('privacy');
 
 // Testing Route
 // Route::get('/settings/profile', function () {

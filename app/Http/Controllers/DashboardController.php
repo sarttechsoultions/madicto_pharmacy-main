@@ -137,4 +137,10 @@ class DashboardController extends Controller
             )
         );
     }
+
+    public function webIndex()
+    {
+        $medicines = medicineModel::latest()->take(8)->get();
+        return view('web.index', compact('medicines'));
+    }
 }
