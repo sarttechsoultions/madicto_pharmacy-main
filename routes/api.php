@@ -20,7 +20,7 @@ Route::post('/verify-otp', [auth::class, 'verifyOtp']);
 
 Route::get('/medicines/{id?}', [api::class, 'getMedicines']);
 Route::get('/medicines/{id}/related', [api::class, 'relatedMedicines']);
-Route::get('/categories/{id?}', [api::class, 'getCategory']);
+Route::post('/categories', [api::class, 'getCategory']);
 Route::get('/banners', [api::class, 'getBanners']);
 
 Route::get('/reviews/{medicine_id}', [api::class, 'index']);

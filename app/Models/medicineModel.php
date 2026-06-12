@@ -8,7 +8,7 @@ class medicineModel extends Model
 {
     protected $table = 'medicine';
     protected $casts = [
-        'image' => 'array',
+        'medicine_image' => 'array',
     ];
 
     public function category()

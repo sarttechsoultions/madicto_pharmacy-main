@@ -65,6 +65,9 @@ class api extends Controller
         if ($request->filled('unit_type')) {
             $query->where('unit_type', $request->unit_type);
         }
+        if ($request->filled('discount')) {
+            $query->where('discount', '>=', $request->discount);
+        }
 
         $medicines = $query->get();
 
@@ -122,10 +125,11 @@ class api extends Controller
         ]);
     }
 
-    public function getCategory(Request $request, $id = null)
+    public function getCategory(Request $request)
     {
-        if ($id) {
-            $category = CategoryModel::find($id);
+        if ($request->filled('id')) {
+
+            $category = CategoryModel::find($request->id);
 
             if (!$category) {
                 return response()->json([
@@ -134,27 +138,43 @@ class api extends Controller
                 ], 404);
             }
 
+            $category->is_available = medicineModel::where(
+                'category_id',
+                $category->id
+            )->exists();
+
             return response()->json([
                 'success' => true,
                 'data' => $category
             ]);
-        } {
-            $query = CategoryModel::query();
-
-            if ($request->filled('name')) {
-                $query->where('name', 'LIKE', '%' . $request->name . '%');
-            }
-            if ($request->filled('description')) {
-                $query->where('description', 'LIKE', '%' . $request->description . '%');
-            }
-
-            $categories = $query->get();
-
-            return response()->json([
-                'success' => true,
-                'data' => $categories
-            ]);
         }
+
+        $query = CategoryModel::query();
+
+        if ($request->filled('name')) {
+            $query->where('name', 'LIKE', '%' . $request->name . '%');
+        }
+
+        if ($request->filled('description')) {
+            $query->where('description', 'LIKE', '%' . $request->description . '%');
+        }
+
+        $categories = $query->get();
+
+        $categories->transform(function ($category) {
+
+            $category->is_available = medicineModel::where(
+                'category_id',
+                $category->id
+            )->exists();
+
+            return $category;
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $categories
+        ]);
     }
 
     public function categoryIsAvailable()
@@ -177,7 +197,18 @@ class api extends Controller
 
     public function getBanners()
     {
-        $banners = BannersModel::all();
+        $banners = BannersModel::get();
+
+        $banners->transform(function ($banner) {
+
+            $banner->medicines = medicineModel::where(
+                'discount',
+                $banner->discount
+            )->get();
+
+            return $banner;
+        });
+
         return response()->json([
             'success' => true,
             'data' => $banners

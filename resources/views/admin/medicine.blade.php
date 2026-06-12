@@ -113,9 +113,8 @@
                         </td>
                         <td>
                             <div class="med-thumb">
-                                @foreach(json_decode($medicine->image, true) ?? [] as $img)
-                                <img src="{{ asset('uploads/medicine/'.$img) }}">
-                                @endforeach
+
+                                <img src="{{ asset($medicine->image) }}">
                             </div>
                         </td>
                         <td>
@@ -270,8 +269,12 @@
                                     <input type="number" id="f-discount" name="discount" placeholder="0" min="0" max="100" />
                                 </div>
                                 <div class="mf-group">
-                                    <label>Stock Quantity *</label>
-                                    <input type="number" id="f-stock" name="quantity" placeholder="0" min="0" />
+                                    <label>Quantity *</label>
+                                    <input type="number" id="f-quantity" name="quantity" placeholder="0" min="0" />
+                                </div>
+                                <div class="mf-group">
+                                    <label>Stock *</label>
+                                    <input type="number" id="f-stock" name="stock" placeholder="0" min="0" />
                                 </div>
                             </div>
                             <div class="mf-row three" style="margin-bottom:0;">
@@ -304,30 +307,40 @@
                     <!-- Right column -->
                     <div class="m-right">
 
+                        <!-- Main Image -->
                         <div class="m-section">
-                            <div class="m-section-title"><i class="fa-regular fa-image"></i> Product Media</div>
-                            <div class="upload-zone" onclick="document.getElementById('imgInput').click()">
+                            <div class="m-section-title">
+                                <i class="fa-regular fa-image"></i> Main Product Image
+                            </div>
+
+                            <input type="file"
+                                name="image"
+                                accept="image/*"
+                                class="form-control">
+                        </div>
+
+                        <!-- Gallery Images -->
+                        <div class="m-section">
+                            <div class="m-section-title">
+                                <i class="fa-regular fa-images"></i> Gallery Images
+                            </div>
+
+                            <div class="upload-zone" onclick="document.getElementById('galleryInput').click()">
                                 <input
                                     type="file"
-                                    id="imgInput"
-                                    name="image[]"
+                                    id="galleryInput"
+                                    name="medicine_image[]"
                                     accept="image/*"
                                     multiple
                                     onchange="previewImages(event)"
                                     hidden>
 
                                 <i class="fa-solid fa-cloud-arrow-up"></i>
-                                <strong>Click to upload images</strong>
+                                <strong>Click to upload gallery images</strong>
                                 <span>PNG, JPG up to 10MB</span>
                             </div>
 
-                            <div class="media-thumbs" id="previewContainer">
-                            </div>
-                            <div class="media-thumbs">
-                                <div class="media-thumb" id="thumb1"></div>
-                                <div class="media-thumb" id="thumb2"></div>
-                                <div class="media-thumb-add" onclick="document.getElementById('imgInput').click()" title="Add more">+</div>
-                            </div>
+                            <div class="media-thumbs" id="previewContainer"></div>
                         </div>
 
                         <div class="m-section">

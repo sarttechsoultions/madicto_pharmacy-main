@@ -32,7 +32,8 @@ class MedicineController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'price' => 'required',
-            'image.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'medicine_image.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
         try {
@@ -45,6 +46,7 @@ class MedicineController extends Controller
             $data->usage_instructions = $request->usage_instructions;
             $data->discount = $request->discount;
             $data->quantity = $request->quantity;
+            $data->stock = $request->stock;
             $data->manufacturer = $request->manufacturer;
             $data->reorder_level = $request->reorder_level;
             $data->description = $request->description;
@@ -55,22 +57,35 @@ class MedicineController extends Controller
             $data->manufacture_date = $request->manufacture_date;
             $data->expiry_date = $request->expiry_date;
 
-            $images = [];
 
+            /* Single Image */
             if ($request->hasFile('image')) {
 
-                foreach ($request->file('image') as $img) {
+                $img = $request->file('image');
 
-                    $imageName = time() . '_' . uniqid() . '.' . $img->getClientOriginalExtension();
+                $imageName = time() . '_main_' . uniqid() . '.' . $img->getClientOriginalExtension();
 
-                    $img->move(public_path('uploads/medicine'), $imageName);
-                    $data->image = 'uploads/medicine/' . $imageName;
+                $img->move(public_path('uploads/medicine'), $imageName);
 
-                    $images[] = $imageName;
+                $data->image = 'uploads/medicine/' . $imageName;
+            }
+
+            /* Multiple Images */
+            $medicineImages = [];
+
+            if ($request->hasFile('medicine_image')) {
+
+                foreach ($request->file('medicine_image') as $img) {
+
+                    $fileName = time() . '_' . uniqid() . '.' . $img->getClientOriginalExtension();
+
+                    $img->move(public_path('uploads/medicine/gallery'), $fileName);
+
+                    $medicineImages[] = 'uploads/medicine/gallery/' . $fileName;
                 }
             }
 
-            $data->image = json_encode($images);
+            $data->medicine_image = json_encode($medicineImages);
 
             $data->save();
 
@@ -102,6 +117,7 @@ class MedicineController extends Controller
             $medicine->category_id = $request->category_id;
             $medicine->price = $request->price;
             $medicine->quantity = $request->quantity;
+
             $medicine->status = $request->status;
 
             $medicine->save();

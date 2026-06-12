@@ -21,6 +21,8 @@ class BannersController extends Controller
             'img' => 'required|image',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
+            'banner_images.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'discount' => 'required|numeric|min:0|max:100',
         ]);
 
         $imagePath = null;
@@ -36,12 +38,29 @@ class BannersController extends Controller
             $imagePath = 'uploads/banners/' . $imageName;
         }
 
+        // Multiple Images
+        $gallery = [];
+
+        if ($request->hasFile('banners_images')) {
+
+            foreach ($request->file('banners_images') as $img) {
+
+                $name = time() . '_' . uniqid() . '.' . $img->getClientOriginalExtension();
+
+                $img->move(public_path('uploads/banners/gallery'), $name);
+
+                $gallery[] = 'uploads/banners/gallery/' . $name;
+            }
+        }
+
         BannersModel::create([
             'title' => $request->title,
             'description' => $request->description,
             'img' => $imagePath,
             'start_date' => $request->start_date,
             'end_date' => $request->end_date,
+            'discount' => $request->discount,
+            'banners_image' => json_encode($gallery),
         ]);
 
         return redirect()

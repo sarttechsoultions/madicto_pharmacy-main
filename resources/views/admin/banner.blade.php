@@ -20,13 +20,17 @@
             <form action="{{ route('admin.banners.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="bm-card">
+                    <div class="bm-field">
+                        <label>Main Banner Image</label>
+                        <input type="file" name="img" class="bm-input" accept="image/*">
+                    </div>
 
                     <h3 class="bm-card-title">Upload New Banner</h3>
 
                     <!-- UPLOAD -->
                     <div class="bm-upload-box" id="bmUploadBox">
 
-                        <input type="file" id="bmFileInput" name="img" hidden accept="image/*">
+                        <input type="file" id="bmFileInput" name="banners_images[]" hidden accept="image/*" multiple>
 
                         <div class="bm-upload-icon">☁</div>
 
@@ -48,6 +52,11 @@
                     <div class="bm-field">
                         <label>Banner Title</label>
                         <input class="bm-input" type="text" name="title" placeholder="Enter title...">
+                    </div>
+
+                    <div class="bm-field">
+                        <label>Discount (%)</label>
+                        <input type="number" name="discount" class="bm-input" placeholder="10" min="0" max="100">
                     </div>
 
                     <!-- DESCRIPTION -->
@@ -94,7 +103,7 @@
                     <div class="bm-drag">⋮⋮</div>
 
                     <div class="bm-banner-img">
-                        <img src="{{ asset('uploads/banners/' . $banner->img) }}" class="bm-thumb">
+                        <img src="{{ asset( $banner->img) }}" class="bm-thumb">
                     </div>
 
                     <div class="bm-banner-info">
