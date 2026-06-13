@@ -24,9 +24,12 @@ use Illuminate\Support\Facades\DB;
 class api extends Controller
 {
 
+
     public function getMedicines(Request $request, $id = null)
     {
-        // Single medicine by ID
+        $userId = auth()->id();
+
+        // Single medicine
         if ($id) {
             $medicine = medicineModel::find($id);
 
@@ -37,13 +40,16 @@ class api extends Controller
                 ], 404);
             }
 
+            $medicine->is_favourite = MedicineFavourite::where('coustmer_id', $userId)
+                ->where('medicine_id', $medicine->id)
+                ->exists();
+
             return response()->json([
                 'success' => true,
                 'data' => $medicine
             ]);
         }
 
-        // Multiple medicines with filters
         $query = medicineModel::query();
 
         if ($request->filled('name')) {
@@ -65,11 +71,20 @@ class api extends Controller
         if ($request->filled('unit_type')) {
             $query->where('unit_type', $request->unit_type);
         }
+
         if ($request->filled('discount')) {
             $query->where('discount', '>=', $request->discount);
         }
 
         $medicines = $query->get();
+
+        $medicines->map(function ($medicine) use ($userId) {
+            $medicine->is_favourite = MedicineFavourite::where('coustmer_id', $userId)
+                ->where('medicine_id', $medicine->id)
+                ->exists();
+
+            return $medicine;
+        });
 
         return response()->json([
             'success' => true,
@@ -966,11 +981,22 @@ class api extends Controller
 
     public function trendingProducts()
     {
+        $userId = auth()->id();
+
         $medicines = medicineModel::withCount('reviews')
             ->withAvg('reviews', 'rating')
             ->orderByDesc('reviews_count')
             ->take(10)
             ->get();
+
+        $favouriteIds = MedicineFavourite::where('coustmer_id', $userId)
+            ->pluck('medicine_id')
+            ->toArray();
+
+        $medicines->map(function ($medicine) use ($favouriteIds) {
+            $medicine->is_favourite = in_array($medicine->id, $favouriteIds);
+            return $medicine;
+        });
 
         return response()->json([
             'status' => true,
@@ -980,22 +1006,67 @@ class api extends Controller
 
     public function dealsOfDay()
     {
+        $userId = auth()->id();
+
         $medicines = medicineModel::where('discount', '>', 0)
             ->orderByDesc('discount')
             ->take(10)
-            ->get()
-            ->map(function ($item) {
+            ->get();
 
-                $item->final_price = $item->price -
-                    (($item->price * $item->discount) / 100);
+        $favouriteIds = MedicineFavourite::where('coustmer_id', $userId)
+            ->pluck('medicine_id')
+            ->toArray();
 
-                return $item;
-            });
+        $medicines = $medicines->map(function ($item) use ($favouriteIds) {
+
+            $item->final_price = $item->price -
+                (($item->price * $item->discount) / 100);
+
+            $item->is_favourite = in_array($item->id, $favouriteIds);
+
+            return $item;
+        });
 
         return response()->json([
             'status' => true,
             'data' => $medicines
         ]);
+    }
+
+
+    public function cancelOrder(Request $request)
+    {
+        $request->validate([
+            'order_id' => 'required|exists:orders,id'
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+
+            $order = OrdersModel::find($request->order_id);
+
+            // Delete order items first
+            OrderItemModel::where('order_id', $order->id)->delete();
+
+            // Delete order
+            $order->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Order cancelled successfully'
+            ]);
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function logout(Request $request)

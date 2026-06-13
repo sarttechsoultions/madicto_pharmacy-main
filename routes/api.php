@@ -29,6 +29,8 @@ Route::get('/deals-of-day', [api::class, 'dealsOfDay']);
 Route::get('/category-is-available', [api::class, 'categoryIsAvailable']);
 
 Route::middleware('auth:sanctum')->group(function () {
+
+    Route::post('/cancel-order', [api::class, 'cancelOrder']);
     Route::get('/orders', [api::class, 'getOrders']);
     Route::get('/order-detail/{id}', [api::class, 'orderDetail']);
 
