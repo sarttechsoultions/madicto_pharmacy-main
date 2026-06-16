@@ -11,6 +11,7 @@ use App\Models\MedicineFavourite;
 use App\Models\medicineModel;
 use App\Models\OrdersModel;
 use App\Models\OrderItemModel;
+use App\Models\CoustmerMedicineModel;
 use App\Models\ReviewModel;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
@@ -31,7 +32,12 @@ class api extends Controller
 
         // Single medicine
         if ($id) {
-            $medicine = medicineModel::find($id);
+            $medicine = medicineModel::with([
+                'reviews.coustmer'
+            ])
+                ->withCount('reviews')
+                ->withAvg('reviews', 'rating')
+                ->find($id);
 
             if (!$medicine) {
                 return response()->json([
@@ -50,7 +56,11 @@ class api extends Controller
             ]);
         }
 
-        $query = medicineModel::query();
+        $query = medicineModel::with([
+            'reviews.coustmer'
+        ])
+            ->withCount('reviews')
+            ->withAvg('reviews', 'rating');
 
         if ($request->filled('name')) {
             $query->where('name', 'LIKE', '%' . $request->name . '%');
@@ -1067,6 +1077,44 @@ class api extends Controller
                 'message' => $e->getMessage()
             ], 500);
         }
+    }
+
+    public function storeCustomerMedicine(Request $request)
+    {
+        $request->validate([
+            'medicine_id' => 'required',
+            'coustmer_id' => 'required',
+            'quantity' => 'nullable',
+            'img' => 'required|image|mimes:jpg,jpeg,png|max:2048'
+        ]);
+        $imagePath = null;
+
+        if ($request->hasFile('img')) {
+
+            $image = $request->file('img');
+
+            $imageName = time() . '_' . $image->getClientOriginalName();
+
+            $image->move(
+                public_path('uploads/cstmedicine'),
+                $imageName
+            );
+
+            $imagePath = 'uploads/cstmedicine/' . $imageName;
+        }
+
+        $data = CoustmerMedicineModel::create([
+            'medicine_id' => $request->medicine_id,
+            'coustmer_id' => $request->coustmer_id,
+            'quantity' => $request->quantity,
+            'img' => $imagePath
+        ]);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Data stored successfully',
+            'data' => $data
+        ]);
     }
 
     public function logout(Request $request)

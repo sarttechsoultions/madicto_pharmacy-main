@@ -16,7 +16,7 @@ class ReviewModel extends Model
 
     public function coustmer()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'coustmer_id');
     }
 
     public function medicine()

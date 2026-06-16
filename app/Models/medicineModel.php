@@ -22,6 +22,6 @@ class medicineModel extends Model
     }
     public function reviews()
     {
-        return $this->hasMany(ReviewModel::class, 'medicine_id');
+        return $this->hasMany(ReviewModel::class, 'medicine_id', 'id');
     }
 }

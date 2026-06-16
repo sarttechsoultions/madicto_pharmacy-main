@@ -30,6 +30,7 @@ Route::get('/category-is-available', [api::class, 'categoryIsAvailable']);
 
 Route::middleware('auth:sanctum')->group(function () {
 
+    Route::post('/customer-medicine-store', [api::class, 'storeCustomerMedicine']);
     Route::post('/cancel-order', [api::class, 'cancelOrder']);
     Route::get('/orders', [api::class, 'getOrders']);
     Route::get('/order-detail/{id}', [api::class, 'orderDetail']);

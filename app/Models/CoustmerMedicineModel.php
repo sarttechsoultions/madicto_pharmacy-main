@@ -11,6 +11,7 @@ class CoustmerMedicineModel extends Model
         'coustmer_id',
         'medicine_id',
         'quantity',
+        'img'
     ];
 
     public function coustmer()
