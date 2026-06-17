@@ -837,3 +837,24 @@
 
 
 
+.old-price{
+    text-decoration: line-through;
+    color: #999;
+    margin-right: 8px;
+    font-size: 14px;
+}
+
+.medicine-price{
+    color: #28a745;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.discount-badge{
+    background: #ff4757;
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    margin-left: 8px;
+}

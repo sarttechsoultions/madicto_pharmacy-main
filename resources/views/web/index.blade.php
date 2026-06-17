@@ -29,7 +29,7 @@
 
     <link rel="icon" type="image/png" href="assets/image/favicon.webp">
     <link rel="preload" href="image/hero-image.png" as="image">
-    <link rel="stylesheet" href="{{ asset('css/main.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/main.css') }}">`
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
 </head>
 
@@ -310,8 +310,30 @@
                             <h4>{{ $medicine->name }}</h4>
                             <p>{{ $medicine->description }}</p>
                             <div class="medicine-bottom">
-                                <span class="medicine-price">₹{{ $medicine->price }}</span>
-                                <button class="cart-btn" aria-label="Add to cart"><i class="bi bi-cart-check-fill"></i></button>
+
+                                @php
+                                $finalPrice = $medicine->price -
+                                (($medicine->price * $medicine->discount) / 100);
+                                @endphp
+
+                                <div>
+                                    <span class="old-price">
+                                        ₹{{ number_format($medicine->price, 2) }}
+                                    </span>
+
+                                    <span class="medicine-price">
+                                        ₹{{ number_format($finalPrice, 2) }}
+                                    </span>
+
+                                    <span class="discount-badge">
+                                        {{ $medicine->discount }}% OFF
+                                    </span>
+                                </div>
+
+                                <button class="cart-btn" aria-label="Add to cart">
+                                    <i class="bi bi-cart-check-fill"></i>
+                                </button>
+
                             </div>
                         </div>
                     </div>

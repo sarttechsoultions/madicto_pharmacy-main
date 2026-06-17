@@ -102,6 +102,7 @@
                         <th>Price</th>
                         <th>Stock</th>
                         <th>Status</th>
+                        <th>Deals of the Day</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -122,8 +123,21 @@
                         </td>
                         <td>{{ $medicine->category->name ?? 'N/A' }}</td>
                         <td>₹ {{ number_format($medicine->price, 2) }}</td>
-                        <td>{{ $medicine->quantity }}</td>
+                        <td>{{ $medicine->stock }}</td>
                         <td>{{ $medicine->status }}</td>
+                        <td>
+                            <form action="{{ route('medicine.dod', $medicine->id) }}"
+                                method="POST">
+                                @csrf
+
+                                <button type="submit"
+                                    class="btn btn-sm {{ $medicine->dod == 1 ? 'btn-success' : 'btn-danger' }}">
+
+                                    {{ $medicine->dod == 1 ? 'YES' : 'NO' }}
+
+                                </button>
+                            </form>
+                        </td>
                         <td>
                             <div class="actions-cell">
                                 <button
@@ -133,6 +147,7 @@
             '{{ $medicine->name }}',
             '{{ $medicine->category_id }}',
             '{{ $medicine->price }}',
+            '{{ $medicine->stock }}',
             '{{ $medicine->quantity }}',
             '{{ $medicine->status }}'
         )">
@@ -470,7 +485,12 @@
 
                     <div class="mf-group">
                         <label>Stock Qty</label>
-                        <input type="number" name="quantity" id="e-stock" min="0" />
+                        <input type="number" name="stock" id="e-stock" min="0" />
+                    </div>
+
+                    <div class="mf-group">
+                        <label>Qty</label>
+                        <input type="number" name="quantity" id="e-qty" min="0" />
                     </div>
 
                     <div class="mf-group">

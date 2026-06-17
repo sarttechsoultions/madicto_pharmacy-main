@@ -86,12 +86,20 @@ class api extends Controller
             $query->where('discount', '>=', $request->discount);
         }
 
-        $medicines = $query->get();
+        $perPage = $request->get('per_page', 10);
 
-        $medicines->map(function ($medicine) use ($userId) {
-            $medicine->is_favourite = MedicineFavourite::where('coustmer_id', $userId)
-                ->where('medicine_id', $medicine->id)
-                ->exists();
+        $medicines = $query->paginate($perPage);
+
+        $favouriteIds = MedicineFavourite::where('coustmer_id', $userId)
+            ->pluck('medicine_id')
+            ->toArray();
+
+        $medicines->getCollection()->transform(function ($medicine) use ($favouriteIds) {
+
+            $medicine->is_favourite = in_array(
+                $medicine->id,
+                $favouriteIds
+            );
 
             return $medicine;
         });
@@ -753,50 +761,50 @@ class api extends Controller
     public function store(Request $request)
     {
         $request->validate([
-
             'medicine_id' => 'required|exists:medicine,id',
-
             'rating' => 'required|integer|min:1|max:5',
-
             'review' => 'nullable|string'
-
         ]);
 
-        $alreadyReviewed = ReviewModel::where('coustmer_id', auth()->id())
+        $customerId = auth()->id();
+
+        // Check medicine purchased or not
+        $hasPurchased = OrderItemModel::join('orders', 'orders.id', '=', 'order_items.order_id')
+            ->where('orders.coustmer_id', $customerId)
+            ->where('orders.status', 'Delivered') // ya Completed
+            ->where('order_items.medicine_id', $request->medicine_id)
+            ->exists();
+
+        if (!$hasPurchased) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You can review only purchased medicines'
+            ], 400);
+        }
+
+        // Already reviewed?
+        $alreadyReviewed = ReviewModel::where('coustmer_id', $customerId)
             ->where('medicine_id', $request->medicine_id)
             ->exists();
 
         if ($alreadyReviewed) {
-
             return response()->json([
-
                 'success' => false,
-
                 'message' => 'You already reviewed this medicine'
-
             ], 400);
         }
 
         $review = ReviewModel::create([
-
-            'coustmer_id' => auth()->id(),
-
+            'coustmer_id' => $customerId,
             'medicine_id' => $request->medicine_id,
-
             'rating' => $request->rating,
-
             'review' => $request->review
-
         ]);
 
         return response()->json([
-
             'success' => true,
-
             'message' => 'Review added successfully',
-
             'data' => $review
-
         ]);
     }
 
@@ -989,59 +997,82 @@ class api extends Controller
         ]);
     }
 
-    public function trendingProducts()
+    public function trendingProducts(Request $request)
     {
         $userId = auth()->id();
+
+        $perPage = $request->get('per_page', 10);
 
         $medicines = medicineModel::withCount('reviews')
             ->withAvg('reviews', 'rating')
             ->orderByDesc('reviews_count')
-            ->take(10)
-            ->get();
+            ->paginate($perPage);
 
         $favouriteIds = MedicineFavourite::where('coustmer_id', $userId)
             ->pluck('medicine_id')
-            ->toArray();
+            ->flip();
 
-        $medicines->map(function ($medicine) use ($favouriteIds) {
-            $medicine->is_favourite = in_array($medicine->id, $favouriteIds);
+        $medicines->getCollection()->transform(function ($medicine) use ($favouriteIds) {
+
+            $medicine->is_favourite = isset($favouriteIds[$medicine->id]);
+
             return $medicine;
         });
 
         return response()->json([
             'status' => true,
-            'data' => $medicines
+            'data' => $medicines->items(),
+            'pagination' => [
+                'current_page' => $medicines->currentPage(),
+                'last_page' => $medicines->lastPage(),
+                'per_page' => $medicines->perPage(),
+                'total' => $medicines->total(),
+                'next_page_url' => $medicines->nextPageUrl(),
+                'prev_page_url' => $medicines->previousPageUrl(),
+            ]
         ]);
     }
 
-    public function dealsOfDay()
+    public function dealsOfDay(Request $request)
     {
         $userId = auth()->id();
 
-        $medicines = medicineModel::where('discount', '>', 0)
+        $perPage = $request->get('per_page', 10);
+
+        $medicines = medicineModel::withCount('reviews')
+            ->withAvg('reviews', 'rating')
+            ->where('dod', 1) // Only Deal Of Day products
             ->orderByDesc('discount')
-            ->take(10)
-            ->get();
+            ->paginate($perPage);
 
         $favouriteIds = MedicineFavourite::where('coustmer_id', $userId)
             ->pluck('medicine_id')
-            ->toArray();
+            ->flip();
 
-        $medicines = $medicines->map(function ($item) use ($favouriteIds) {
+        $medicines->getCollection()->transform(function ($item) use ($favouriteIds) {
 
             $item->final_price = $item->price -
                 (($item->price * $item->discount) / 100);
 
-            $item->is_favourite = in_array($item->id, $favouriteIds);
+            $item->is_favourite = isset($favouriteIds[$item->id]);
 
             return $item;
         });
 
         return response()->json([
             'status' => true,
-            'data' => $medicines
+            'data' => $medicines->items(),
+            'pagination' => [
+                'current_page' => $medicines->currentPage(),
+                'last_page' => $medicines->lastPage(),
+                'per_page' => $medicines->perPage(),
+                'total' => $medicines->total(),
+                'next_page_url' => $medicines->nextPageUrl(),
+                'prev_page_url' => $medicines->previousPageUrl(),
+            ]
         ]);
     }
+
 
 
     public function cancelOrder(Request $request)

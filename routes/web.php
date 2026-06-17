@@ -86,5 +86,7 @@ Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashb
 // Review Route
 Route::get('/reviews', [ReviewController::class, 'index'])->name('reviews.index');
 
+Route::post('/medicine/dod/{id}', [MedicineController::class, 'toggleDod'])->name('medicine.dod');
+
 
 require __DIR__ . '/auth.php';

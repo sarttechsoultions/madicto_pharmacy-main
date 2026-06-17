@@ -21,9 +21,13 @@ class MedicineController extends Controller
             ->get();
 
         $medicenesall = medicineModel::count();
-        $medicenesinstocks = medicineModel::where('status', 'In Stock')->count();
-        $mediceneslowstocks = medicineModel::where('status', 'Low Stock')->count();
-        $medicenesoutofstocks = medicineModel::where('status', 'Out of Stock')->count();
+        $medicenesinstocks = medicineModel::where('quantity', '>', 5)->count();
+
+        $mediceneslowstocks = medicineModel::where('quantity', '>', 0)
+            ->where('quantity', '<=', 5)
+            ->count();
+
+        $medicenesoutofstocks = medicineModel::where('quantity', 0)->count();
         return view('admin.medicine', compact('medicenes', 'category', 'medicenesall', 'medicenesinstocks', 'mediceneslowstocks', 'medicenesoutofstocks'));
     }
     public function store(Request $request)
@@ -53,7 +57,7 @@ class MedicineController extends Controller
             $data->price = $request->price;
             $data->unit_type = $request->unit_type;
             $data->pack_size = $request->pack_size;
-            $data->status = $request->status;
+            $data->status = $request->status ?? 'In Stock';
             $data->manufacture_date = $request->manufacture_date;
             $data->expiry_date = $request->expiry_date;
 
@@ -117,6 +121,7 @@ class MedicineController extends Controller
             $medicine->category_id = $request->category_id;
             $medicine->price = $request->price;
             $medicine->quantity = $request->quantity;
+            $medicine->stock = $request->stock;
 
             $medicine->status = $request->status;
 
@@ -150,5 +155,19 @@ class MedicineController extends Controller
             return redirect()->back()
                 ->with('error', 'Something went wrong.');
         }
+    }
+
+    public function toggleDod($id)
+    {
+        $medicine = medicineModel::findOrFail($id);
+
+        $medicine->dod = $medicine->dod == 1 ? 2 : 1;
+
+        $medicine->save();
+
+        return back()->with(
+            'success',
+            'Deal Of Day status updated successfully'
+        );
     }
 }
