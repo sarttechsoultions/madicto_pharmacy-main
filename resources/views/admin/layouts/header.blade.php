@@ -17,6 +17,8 @@
     <link rel="stylesheet" href="{{ asset('css/setting.css') }}">
     <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
     <link rel="stylesheet" href="{{ asset('css/review.css') }}">
+    <link rel="icon" type="image/png" href="{{ asset('image/favicon.webp') }}" />
+
 
 </head>
 
@@ -25,11 +27,7 @@
     <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-logo">
-            <div class="logo-icon"><i class="fa-solid fa-cart-shopping"></i></div>
-            <div class="logo-text">
-                <h2>MEDICTO™<br>PHARMACY</h2>
-                <span>Health Management</span>
-            </div>
+            <img src="{{ asset('image/medicto-logo.jpg.webp') }}" alt="Medicto Logo" class="logo-img" />
             <button class="sidebar-close-btn" id="sidebarCloseBtn" title="Collapse sidebar">
                 <i class="fa-solid fa-chevron-left"></i>
             </button>
