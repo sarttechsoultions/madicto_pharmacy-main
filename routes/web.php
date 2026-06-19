@@ -90,6 +90,8 @@ Route::post('/medicine/dod/{id}', [MedicineController::class, 'toggleDod'])->nam
 
 Route::post('/medicine/import', [MedicineController::class, 'import']);
 Route::get('/medicine/sample-download', [MedicineController::class, 'downloadSample']);
+Route::post('/bannersd/{id}', [BannersController::class, 'destroy'])
+    ->name('banners.destroy');
 
 
 require __DIR__ . '/auth.php';

@@ -79,4 +79,12 @@ class BannersController extends Controller
             'status' => $banner->status
         ]);
     }
+
+    public function destroy($id)
+    {
+        $banner = BannersModel::findOrFail($id);
+        $banner->delete();
+
+        return redirect()->back()->with('success', 'Banner deleted successfully.');
+    }
 }

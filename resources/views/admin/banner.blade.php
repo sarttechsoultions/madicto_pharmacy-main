@@ -83,7 +83,7 @@
                     <button class="bm-btn bm-btn-primary" type="submit">Upload Banner</button>
 
                 </div>
-
+            </form>
         </div>
 
         <!-- RIGHT SIDE (QUEUE) -->
@@ -122,7 +122,10 @@
                         {{ strtoupper($banner->status) }}
                     </div>
 
-                    <div class="bm-trash">🗑</div>
+                    <div class="bm-trash"
+                        onclick="openConfirms({{ $banner->id }}, '{{ $banner->title }}')">
+                        🗑
+                    </div>
 
                 </div>
 
@@ -138,6 +141,50 @@
 
 
 <!-- ================= MODAL ================= -->
+
+<!-- ══════════════════════════════════════════════
+     CONFIRM DELETE MODAL
+═══════════════════════════════════════════════ -->
+<div class="confirm-modal" id="confirmModalbanners">
+
+    <div class="confirm-box">
+
+        <div class="confirm-box-header">
+
+            <div class="confirm-icon-wrap">
+                <i class="fa-solid fa-trash"></i>
+            </div>
+
+            <h3>Delete Banner?</h3>
+
+            <p id="confirmMsg">
+                This action cannot be undone.
+            </p>
+
+        </div>
+
+        <div class="confirm-box-footer">
+
+            <button type="button"
+                class="btn-draft"
+                onclick="closeConfirms()">
+                Cancel
+            </button>
+
+            <form id="deleteFormbanners" method="POST">
+                @csrf
+
+                <button type="submit" class="btn-danger">
+                    <i class="fa-solid fa-trash"></i>
+                    Delete
+                </button>
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
 
 <!-- ================= JS ================= -->
 
@@ -164,6 +211,22 @@
 
             });
 
+    }
+</script>
+
+<script>
+    function openConfirms(id, title) {
+        document.getElementById('confirmModalbanners').style.display = 'flex';
+
+        document.getElementById('confirmMsg').innerHTML =
+            'Are you sure you want to delete <strong>' + title + '</strong>?';
+
+        document.getElementById('deleteFormbanners').action =
+            '/bannersd/' + id; // delete route
+    }
+
+    function closeConfirms() {
+        document.getElementById('confirmModalbanners').style.display = 'none';
     }
 </script>
 <script src="{{ asset('js/main.js') }}"></script>

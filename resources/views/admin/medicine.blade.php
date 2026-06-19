@@ -11,20 +11,30 @@
             <p>Manage and monitor your medical supplies and stock levels.</p>
         </div>
         <div class="page-header-btns">
+
             <button class="btn-primary" onclick="openModal()">
                 <i class="fa-solid fa-plus"></i> Add Medicine
             </button>
-            <form action="{{ url('medicine/import') }}" method="POST" enctype="multipart/form-data">
+
+            <form action="{{ url('medicine/import') }}"
+                method="POST"
+                enctype="multipart/form-data"
+                class="import-form">
+
                 @csrf
 
                 <input type="file" name="file" required>
 
-                <button type="submit">Import Excel</button>
+                <button type="submit" class="btn-primary">
+                    Import Excel
+                </button>
             </form>
+
             <a href="{{ url('/medicine/sample-download') }}"
-                class="btn btn-success">
+                class="btn-primary download-btn">
                 Download Sample Excel
             </a>
+
         </div>
     </div>
 
@@ -190,7 +200,6 @@
 
 </main>
 </div>
-
 <!-- ══════════════════════════════════════════════
      ADD MEDICINE MODAL — full screen
 ═══════════════════════════════════════════════ -->
@@ -209,10 +218,10 @@
                     <span class="notif-dot"></span>
                 </button>
                 <div class="profile-pill">
-                    <div class="avatar" style="background:linear-gradient(135deg,#c0392b,#e74c3c);">DS</div>
+                    <div class="avatar">{{ Auth::user()->name[0] }}</div>
                     <div class="profile-info">
-                        <strong>Dr. Sarah Smith</strong>
-                        <small>Admin Profile</small>
+                        <strong>{{ Auth::user()->name }}</strong>
+                        <small>{{ Auth::user()->email }}</small>
                     </div>
                 </div>
                 <button class="icon-btn" onclick="closeModal()" title="Close (Esc)" type="button">

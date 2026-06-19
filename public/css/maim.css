@@ -2837,3 +2837,185 @@ tbody td h4 {
   }
 
 }
+
+
+.page-header-btns {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.import-form {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.import-form input[type="file"] {
+  max-width: 250px;
+}
+
+.download-btn {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+
+  .page-header-btns {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .import-form {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .page-header-btns button,
+  .page-header-btns a,
+  .import-form input[type="file"] {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .import-form input[type="file"] {
+    max-width: 100%;
+  }
+}
+
+/* ======================
+   RESPONSIVE MEDICINE PAGE
+====================== */
+
+/* Tablet */
+@media (max-width: 992px) {
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .page-header-btns {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .filter-bar {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .filter-group,
+  .quick-filter {
+    flex: 1 1 45%;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+
+  .content {
+    padding: 10px;
+  }
+
+  .page-header h1 {
+    font-size: 24px;
+  }
+
+  .page-header p {
+    font-size: 14px;
+  }
+
+  .page-header-btns {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .page-header-btns button,
+  .page-header-btns a,
+  .page-header-btns input[type="file"] {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .import-form {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-group,
+  .quick-filter,
+  .filter-select,
+  .reset-btn {
+    width: 100%;
+  }
+
+  /* Table Responsive */
+  .table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table-scroll table {
+    min-width: 900px;
+  }
+
+  .actions-cell {
+    display: flex;
+    gap: 8px;
+  }
+
+  .med-thumb img {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+  }
+}
+
+/* Small Mobile */
+@media (max-width: 480px) {
+
+  .page-header h1 {
+    font-size: 20px;
+  }
+
+  .stat-card {
+    padding: 15px;
+  }
+
+  .stat-value {
+    font-size: 22px;
+  }
+
+  .stat-label {
+    font-size: 13px;
+  }
+
+  .action-btn {
+    width: 34px;
+    height: 34px;
+  }
+}

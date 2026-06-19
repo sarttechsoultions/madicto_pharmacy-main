@@ -501,32 +501,19 @@ tbody tr:hover {
     border-radius: 10px;
 }
 
-/* ─────────────────────────────
-   RESPONSIVE
-───────────────────────────── */
-
-@media (max-width: 1200px) {
-
-    .stat-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .content-right {
-        width: 280px;
-        min-width: 280px;
-    }
-}
-
-@media (max-width: 992px) {
+/* =========================
+   TABLET (1024px)
+========================= */
+@media (max-width: 1024px) {
 
     .content {
         flex-direction: column;
+        gap: 20px;
     }
 
     .content-left,
     .content-right {
         width: 100%;
-        min-width: 100%;
     }
 
     .stat-grid {
@@ -536,86 +523,45 @@ tbody tr:hover {
     .page-header {
         flex-direction: column;
         align-items: flex-start;
+        gap: 15px;
     }
 
     .header-actions {
         width: 100%;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
     }
 
-    .btn {
+    .header-actions .btn {
         flex: 1;
     }
 }
-
-/* ==========================
-   MOBILE FIX
-========================== */
 
 /* =========================
-   MOBILE SIDEBAR FIX
+   MOBILE (768px)
 ========================= */
-
 @media (max-width: 768px) {
 
-    .sidebar {
-        position: fixed;
-        left: -280px;
-        top: 0;
-        width: 280px;
-        height: 100vh;
-        z-index: 9999;
-        transition: all .3s ease;
-        overflow-y: auto;
-    }
-
-    .sidebar.active {
-        left: 0;
-    }
-
-    .main-wrap {
-        margin-left: 0 !important;
-        width: 100% !important;
-    }
-
-    .topbar {
-        width: 100%;
-        padding: 12px 15px;
-    }
-
-    .search-bar {
-        flex: 1;
-        min-width: 0;
-    }
-
-    .profile-pill {
-        display: none;
-    }
-
-    .overlay {
-        display: none;
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, .5);
-        z-index: 9998;
-    }
-
-    .overlay.active {
-        display: block;
-    }
-}
-
-@media (max-width: 480px) {
-
-    .main-wrap {
-        padding: 12px;
+    .content {
+        padding: 10px;
     }
 
     .page-header h1 {
-        font-size: 22px;
+        font-size: 24px;
     }
 
     .page-header p {
-        font-size: 13px;
+        font-size: 14px;
+    }
+
+    .stat-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .stat-card {
+        width: 100%;
     }
 
     .header-actions {
@@ -623,15 +569,92 @@ tbody tr:hover {
         width: 100%;
     }
 
-    .btn {
+    .header-actions .btn {
         width: 100%;
     }
 
-    .stat-value {
-        font-size: 28px;
+    .chart-card,
+    .orders-card,
+    .panel-card {
+        overflow: hidden;
     }
 
     .chart-area {
-        height: 220px;
+        height: 300px;
+    }
+
+    .chart-area canvas {
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    /* Orders Table Scroll */
+    .orders-card {
+        overflow-x: auto;
+    }
+
+    .orders-card table {
+        min-width: 700px;
+    }
+
+    .panel-title {
+        font-size: 16px;
+    }
+
+    .med-item,
+    .stock-item {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .med-pct {
+        width: 100%;
+        text-align: left;
+    }
+}
+
+/* =========================
+   SMALL MOBILE (480px)
+========================= */
+@media (max-width: 480px) {
+
+    .content {
+        padding: 8px;
+    }
+
+    .page-header h1 {
+        font-size: 20px;
+    }
+
+    .stat-value {
+        font-size: 22px;
+    }
+
+    .stat-label {
+        font-size: 13px;
+    }
+
+    .chart-title,
+    .orders-title,
+    .panel-title {
+        font-size: 15px;
+    }
+
+    .toggle-group {
+        width: 100%;
+        display: flex;
+    }
+
+    .toggle-btn {
+        flex: 1;
+    }
+
+    .stock-name,
+    .med-name {
+        font-size: 14px;
+    }
+
+    .stock-qty {
+        font-size: 12px;
     }
 }
