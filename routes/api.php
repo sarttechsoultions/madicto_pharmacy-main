@@ -18,7 +18,7 @@ Route::post('/forgot-password', [auth::class, 'forgotPassword']);
 Route::post('/send-otp', [auth::class, 'sendOtp']);
 Route::post('/verify-otp', [auth::class, 'verifyOtp']);
 
-Route::get('/medicines/{id?}', [api::class, 'getMedicines']);
+Route::post('/medicines', [api::class, 'getMedicines']);
 Route::get('/medicines/{id}/related', [api::class, 'relatedMedicines']);
 Route::post('/categories', [api::class, 'getCategory']);
 Route::get('/banners', [api::class, 'getBanners']);

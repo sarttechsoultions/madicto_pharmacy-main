@@ -14,6 +14,17 @@
             <button class="btn-primary" onclick="openModal()">
                 <i class="fa-solid fa-plus"></i> Add Medicine
             </button>
+            <form action="{{ url('medicine/import') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+
+                <input type="file" name="file" required>
+
+                <button type="submit">Import Excel</button>
+            </form>
+            <a href="{{ url('/medicine/sample-download') }}"
+                class="btn btn-success">
+                Download Sample Excel
+            </a>
         </div>
     </div>
 

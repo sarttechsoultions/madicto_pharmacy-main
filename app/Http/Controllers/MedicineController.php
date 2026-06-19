@@ -6,6 +6,9 @@ use App\Models\CategoryModel;
 use App\Models\medicineModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use App\Imports\MedicineImport;
+use App\Exports\MedicineSampleExport;
+use Maatwebsite\Excel\Facades\Excel;
 use Exception;
 
 class MedicineController extends Controller
@@ -168,6 +171,27 @@ class MedicineController extends Controller
         return back()->with(
             'success',
             'Deal Of Day status updated successfully'
+        );
+    }
+
+
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv'
+        ]);
+
+        Excel::import(new MedicineImport, $request->file('file'));
+
+        return back()->with('success', 'Medicines Imported Successfully');
+    }
+
+    public function downloadSample()
+    {
+        return Excel::download(
+            new MedicineSampleExport,
+            'medicine_sample.xlsx'
         );
     }
 }

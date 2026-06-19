@@ -26,12 +26,13 @@ class api extends Controller
 {
 
 
-    public function getMedicines(Request $request, $id = null)
+    public function getMedicines(Request $request)
     {
-        $userId = auth()->id();
+        $id = $request->id;
 
         // Single medicine
         if ($id) {
+
             $medicine = medicineModel::with([
                 'reviews.coustmer'
             ])
@@ -46,7 +47,10 @@ class api extends Controller
                 ], 404);
             }
 
-            $medicine->is_favourite = MedicineFavourite::where('coustmer_id', $userId)
+            $medicine->is_favourite = MedicineFavourite::where(
+                'coustmer_id',
+                $request->coustmer_id
+            )
                 ->where('medicine_id', $medicine->id)
                 ->exists();
 
@@ -90,9 +94,10 @@ class api extends Controller
 
         $medicines = $query->paginate($perPage);
 
-        $favouriteIds = MedicineFavourite::where('coustmer_id', $userId)
-            ->pluck('medicine_id')
-            ->toArray();
+        $favouriteIds = MedicineFavourite::where(
+            'coustmer_id',
+            $request->coustmer_id
+        )->pluck('medicine_id')->toArray();
 
         $medicines->getCollection()->transform(function ($medicine) use ($favouriteIds) {
 
@@ -247,12 +252,14 @@ class api extends Controller
             'data' => $banners
         ]);
     }
-    public function getOrders()
+    public function getOrders(Request $request)
     {
+        $perPage = $request->get('per_page', 10);
+
         $orders = OrdersModel::with('items')
             ->where('coustmer_id', auth()->id())
             ->latest()
-            ->get();
+            ->paginate($perPage);
 
         return response()->json([
             'status' => true,
@@ -608,6 +615,7 @@ class api extends Controller
 
     public function updateProfile(Request $request)
     {
+
         $request->validate([
             'email' => ['nullable', 'email'],
             'number' => ['nullable', 'string', 'max:20'],
@@ -761,50 +769,47 @@ class api extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'medicine_id' => 'required|exists:medicine,id',
+            'order_id' => 'required|exists:orders,id',
             'rating' => 'required|integer|min:1|max:5',
             'review' => 'nullable|string'
         ]);
 
         $customerId = auth()->id();
 
-        // Check medicine purchased or not
-        $hasPurchased = OrderItemModel::join('orders', 'orders.id', '=', 'order_items.order_id')
-            ->where('orders.coustmer_id', $customerId)
-            ->where('orders.status', 'Delivered') // ya Completed
-            ->where('order_items.medicine_id', $request->medicine_id)
-            ->exists();
+        $order = OrdersModel::where('id', $request->order_id)
+            ->where('coustmer_id', $customerId)
+            ->where('status', 'Delivered')
+            ->first();
 
-        if (!$hasPurchased) {
+        if (!$order) {
             return response()->json([
                 'success' => false,
-                'message' => 'You can review only purchased medicines'
+                'message' => 'Delivered order not found'
             ], 400);
         }
 
-        // Already reviewed?
-        $alreadyReviewed = ReviewModel::where('coustmer_id', $customerId)
-            ->where('medicine_id', $request->medicine_id)
-            ->exists();
+        $items = OrderItemModel::where('order_id', $order->id)->get();
 
-        if ($alreadyReviewed) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You already reviewed this medicine'
-            ], 400);
+        foreach ($items as $item) {
+
+            $alreadyReviewed = ReviewModel::where('coustmer_id', $customerId)
+                ->where('medicine_id', $item->medicine_id)
+                ->exists();
+
+            if (!$alreadyReviewed) {
+
+                ReviewModel::create([
+                    'coustmer_id' => $customerId,
+                    'medicine_id' => $item->medicine_id,
+                    'rating' => $request->rating,
+                    'review' => $request->review
+                ]);
+            }
         }
-
-        $review = ReviewModel::create([
-            'coustmer_id' => $customerId,
-            'medicine_id' => $request->medicine_id,
-            'rating' => $request->rating,
-            'review' => $request->review
-        ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Review added successfully',
-            'data' => $review
+            'message' => 'Review added for all medicines in this order'
         ]);
     }
 
@@ -860,9 +865,12 @@ class api extends Controller
 
     public function carts(Request $request)
     {
+        $perPage = $request->get('per_page', 10);
+
         $cart = CartModel::with('medicine')
             ->where('coustmer_id', auth()->id())
-            ->get();
+            ->latest()
+            ->paginate($perPage);
 
         return response()->json([
             'status' => true,
@@ -983,13 +991,21 @@ class api extends Controller
         ]);
     }
 
-    public function favouriteMedicines()
+    public function favouriteMedicines(Request $request)
     {
+        $perPage = $request->get('per_page', 10);
 
         $medicineIds = MedicineFavourite::where('coustmer_id', auth()->id())
             ->pluck('medicine_id');
 
-        $medicines = medicineModel::whereIn('id', $medicineIds)->get();
+        $medicines = medicineModel::whereIn('id', $medicineIds)
+            ->latest()
+            ->paginate($perPage);
+
+        $medicines->getCollection()->transform(function ($medicine) {
+            $medicine->is_favourite = true;
+            return $medicine;
+        });
 
         return response()->json([
             'status' => true,
@@ -1113,9 +1129,6 @@ class api extends Controller
     public function storeCustomerMedicine(Request $request)
     {
         $request->validate([
-            'medicine_id' => 'required',
-            'coustmer_id' => 'required',
-            'quantity' => 'nullable',
             'img' => 'required|image|mimes:jpg,jpeg,png|max:2048'
         ]);
         $imagePath = null;
@@ -1135,9 +1148,7 @@ class api extends Controller
         }
 
         $data = CoustmerMedicineModel::create([
-            'medicine_id' => $request->medicine_id,
-            'coustmer_id' => $request->coustmer_id,
-            'quantity' => $request->quantity,
+            'coustmer_id' => auth()->id(),
             'img' => $imagePath
         ]);
 
