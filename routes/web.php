@@ -6,6 +6,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CoustmerMedicineController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MedicineController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrdersController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReviewController;
@@ -56,17 +57,20 @@ Route::post('/update-order-status', [OrdersController::class, 'updateOrderStatus
 Route::post('/update-payment-status', [OrdersController::class, 'updatePaymentStatus'])->name('admin.orders.updatePaymentStatus');
 Route::get('/order/{id}/details', [OrdersController::class, 'details'])->name('order.details');
 Route::delete('/orders/{id}', [OrdersController::class, 'destroy'])->name('orders.destroy');
+Route::get('/orders/{id}/invoice', [OrdersController::class, 'invoice'])->name('orders.invoice');
 
 // User Orders Route
 Route::get('/users', [UserController::class, 'index'])->name('user.index');
 Route::post('/user/toggle-status', [UserController::class, 'toggleStatus'])->name('user.toggleStatus');
 Route::post('/admin/toggle-role', [UserController::class, 'toggleRole'])->name('admin.toggle.role');
+Route::get('/users/export', [UserController::class, 'export'])->name('users.export');
 
 // Banners Orders Route
 Route::get('/banners', [BannersController::class, 'index'])->name('banner.index');
 Route::post('/banners/store', [BannersController::class, 'store'])->name('admin.banners.store');
 Route::put('/banners/{id}', [BannersController::class, 'update'])->name('admin.banners.update');
 Route::post('/banner/toggle-status/{id}', [BannersController::class, 'toggleStatus'])->name('banner.toggleStatus');
+Route::put('/banners/{id}', [BannersController::class, 'updatedata'])->name('banners.update');
 
 // Coustmer Medicine Orders Route
 Route::get('/coustmer/medicine', [CoustmerMedicineController::class, 'index'])->name('coustmer.medicine.index');
@@ -94,4 +98,11 @@ Route::post('/bannersd/{id}', [BannersController::class, 'destroy'])
     ->name('banners.destroy');
 
 
+Route::middleware('auth:sanctum')->post(
+    '/save-fcm-token',
+    [UserController::class, 'saveFcmToken']
+);
+
+Route::post('/notifications/send', [NotificationController::class, 'sendNotification'])->name('admin.notification.send');
+Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications');
 require __DIR__ . '/auth.php';

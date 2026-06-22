@@ -261,6 +261,18 @@ class api extends Controller
             ->latest()
             ->paginate($perPage);
 
+        foreach ($orders as $order) {
+
+            foreach ($order->items as $item) {
+
+                $rating = ReviewModel::where('medicine_id', $item->medicine_id)
+                    ->where('coustmer_id', auth()->id())
+                    ->first();
+
+                $item->is_rated = $rating ? true : false;
+            }
+        }
+
         return response()->json([
             'status' => true,
             'data' => $orders
@@ -337,6 +349,13 @@ class api extends Controller
 
                 $quantity = $request->quantity ?? 1;
 
+                if ($medicine->quantity < $quantity) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => $medicine->name . ' stock not available'
+                    ], 422);
+                }
+
                 $subtotal = $medicine->price * $quantity;
 
                 $items->push([
@@ -368,15 +387,32 @@ class api extends Controller
 
                 foreach ($cartItems as $item) {
 
-                    $lineTotal = $item->medicine->price * $item->quantity;
+                    $medicine = MedicineModel::lockForUpdate()
+                        ->find($item->medicine_id);
+
+                    if (!$medicine) {
+                        return response()->json([
+                            'status' => false,
+                            'message' => 'Medicine not found'
+                        ], 404);
+                    }
+
+                    if ($medicine->quantity < $item->quantity) {
+                        return response()->json([
+                            'status' => false,
+                            'message' => $medicine->name . ' stock not available'
+                        ], 422);
+                    }
+
+                    $lineTotal = $medicine->price * $item->quantity;
 
                     $subtotal += $lineTotal;
 
                     $items->push([
-                        'medicine_id' => $item->medicine_id,
-                        'medicine_name' => $item->medicine->name,
-                        'medicine_image' => $item->medicine->image,
-                        'price' => $item->medicine->price,
+                        'medicine_id' => $medicine->id,
+                        'medicine_name' => $medicine->name,
+                        'medicine_image' => $medicine->image,
+                        'price' => $medicine->price,
                         'quantity' => $item->quantity,
                         'subtotal' => $lineTotal,
                     ]);
@@ -461,6 +497,24 @@ class api extends Controller
                     'quantity' => $item['quantity'],
                     'subtotal' => $item['subtotal'],
                 ]);
+
+                $medicine = MedicineModel::find($item['medicine_id']);
+
+                if ($medicine) {
+
+                    $medicine->quantity =
+                        max(0, $medicine->quantity - $item['quantity']);
+
+                    if ($medicine->quantity == 0) {
+                        $medicine->status = 'Out of Stock';
+                    } elseif ($medicine->quantity <= 5) {
+                        $medicine->status = 'Low Stock';
+                    } else {
+                        $medicine->status = 'In Stock';
+                    }
+
+                    $medicine->save();
+                }
             }
 
             // Cart clear only when cart checkout
@@ -1159,11 +1213,46 @@ class api extends Controller
         ]);
     }
 
-    public function logout(Request $request)
+    public function searchMedicines(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
+        $query = medicineModel::query();
+
+        // Medicine Name Search
+        if ($request->filled('medicine_name')) {
+            $query->where('name', 'LIKE', '%' . $request->medicine_name . '%');
+        }
+
+        // Title Search
+        if ($request->filled('description')) {
+            $query->where('description', 'LIKE', '%' . $request->description . '%');
+        }
+
+        if ($request->filled('unit_type')) {
+            $query->where('unit_type', $request->unit_type);
+        }
+
+        $medicines = $query->get();
 
         return response()->json([
+            'success' => true,
+            'data' => $medicines
+        ]);
+    }
+
+    public function logout(Request $request)
+    {
+        $user = $request->user();
+
+        // FCM token remove
+        $user->update([
+            'fcm_token' => null
+        ]);
+
+        // Current token delete
+        $user->currentAccessToken()->delete();
+
+        return response()->json([
+            'status' => true,
             'message' => 'Logged out successfully'
         ]);
     }

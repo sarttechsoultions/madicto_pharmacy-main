@@ -133,7 +133,7 @@
     <br>
 
     <!-- ── RIGHT PANEL ── -->
-    <div class="content-right">
+    <div class="content-right" style="display: -webkit-inline-box;">
 
         <!-- Low Stock Alerts -->
         <div class="panel-card">
@@ -183,14 +183,14 @@
 
             @endforelse
 
-            <button class="btn-restock">
+            <a href="{{ route('medicine.index') }}" class="btn-restock">
                 Restock All
-            </button>
+            </a>
 
         </div>
 
         <!-- Top Selling -->
-        <div class="panel-card">
+        <div class="panel-card top-selling">
 
             <div class="panel-title">
                 Top Selling Medicines
@@ -241,6 +241,8 @@
             @endforelse
 
         </div>
+
+
     </div><!-- /content-left -->
 </div><!-- /content -->
 </div><!-- /main -->

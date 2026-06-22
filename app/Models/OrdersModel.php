@@ -48,6 +48,11 @@ class OrdersModel extends Model
         return $this->belongsTo(User::class, 'coustmer_id');
     }
 
+    public function address()
+    {
+        return $this->belongsTo(AddressModel::class, 'coustmer_id', 'coustmer_id');
+    }
+
     public function medicine()
     {
         return $this->belongsTo(medicineModel::class, 'medicine_id');

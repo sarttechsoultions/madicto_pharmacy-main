@@ -122,6 +122,17 @@
                         {{ strtoupper($banner->status) }}
                     </div>
 
+                    <div class="bm-edit" style="cursor: pointer;"
+                        onclick='openEditBanner(
+        @json($banner->id),
+        @json($banner->title),
+        @json($banner->description),
+        @json($banner->discount),
+        @json($banner->start_date),
+        @json($banner->end_date)
+    )'>
+                        ✏️
+                    </div>
                     <div class="bm-trash"
                         onclick="openConfirms({{ $banner->id }}, '{{ $banner->title }}')">
                         🗑
@@ -183,6 +194,104 @@
         </div>
 
     </div>
+
+</div>
+
+<div class="edit-modal" id="editBannerModal">
+
+    <form id="editBannerForm" method="POST" enctype="multipart/form-data">
+
+        @csrf
+        @method('PUT')
+
+        <div class="edit-box">
+
+            <div class="edit-box-header">
+                <h3>Edit Banner</h3>
+
+                <button type="button"
+                    class="icon-btn"
+                    onclick="closeEditBanner()">
+                    ✕
+                </button>
+            </div>
+
+            <div class="edit-box-body">
+
+                <div class="bm-field">
+                    <label>Banner Image</label>
+                    <input type="file" name="img" class="bm-input">
+                </div>
+
+                <div class="bm-field">
+                    <label>Title</label>
+                    <input type="text"
+                        name="title"
+                        id="edit_title"
+                        class="bm-input">
+                </div>
+
+                <div class="bm-field">
+                    <label>Discount</label>
+                    <input type="number"
+                        name="discount"
+                        id="edit_discount"
+                        class="bm-input">
+                </div>
+
+                <div class="bm-field">
+                    <label>Description</label>
+
+                    <textarea
+                        name="description"
+                        id="edit_description"
+                        class="bm-input"
+                        style="height:120px"></textarea>
+                </div>
+
+                <div class="bm-date-grid">
+
+                    <div class="bm-field">
+                        <label>Start Date</label>
+
+                        <input type="date"
+                            name="start_date"
+                            id="edit_start_date"
+                            class="bm-input">
+                    </div>
+
+                    <div class="bm-field">
+                        <label>End Date</label>
+
+                        <input type="date"
+                            name="end_date"
+                            id="edit_end_date"
+                            class="bm-input">
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="edit-box-footer">
+
+                <button type="button"
+                    class="btn-draft"
+                    onclick="closeEditBanner()">
+                    Cancel
+                </button>
+
+                <button type="submit"
+                    class="bm-btn bm-btn-primary">
+
+                    Update Banner
+                </button>
+
+            </div>
+
+        </div>
+
+    </form>
 
 </div>
 
@@ -297,6 +406,48 @@
     bmModal.addEventListener('click', function(e) {
         if (e.target === bmModal) closeImageModal();
     });
+</script>
+
+<script>
+    function openEditBanner(
+        id,
+        title,
+        description,
+        discount,
+        start_date,
+        end_date,
+        status
+    ) {
+
+        document.getElementById('editBannerForm').action =
+            '/banners/' + id;
+
+        document.getElementById('edit_title').value =
+            title ?? '';
+
+        document.getElementById('edit_description').value =
+            description ?? '';
+
+        document.getElementById('edit_discount').value =
+            discount ?? '';
+
+        document.getElementById('edit_start_date').value =
+            start_date ?? '';
+
+        document.getElementById('edit_end_date').value =
+            end_date ?? '';
+
+        document.getElementById('edit_status').value =
+            status ?? 'inactive';
+
+        document.getElementById('editBannerModal').style.display =
+            'flex';
+    }
+
+    function closeEditBanner() {
+        document.getElementById('editBannerModal').style.display =
+            'none';
+    }
 </script>
 
 @endsection

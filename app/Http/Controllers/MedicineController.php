@@ -15,15 +15,91 @@ class MedicineController extends Controller
 {
 
 
-    public function index()
+    public function index(Request $request)
     {
-        $medicenes = medicineModel::with('category')->orderByDesc('created_at')
-            ->paginate(10);
+        $query = medicineModel::with('category');
 
-        $category = CategoryModel::orderByDesc('created_at')
-            ->get();
+        // Global Search
+        if ($request->filled('search')) {
+
+            $search = $request->search;
+
+            $query->where(function ($q) use ($search) {
+
+                $q->where('id', 'LIKE', "%{$search}%")
+                    ->orWhere('name', 'LIKE', "%{$search}%")
+                    ->orWhere('price', 'LIKE', "%{$search}%")
+                    ->orWhere('stock', 'LIKE', "%{$search}%")
+                    ->orWhere('quantity', 'LIKE', "%{$search}%")
+                    ->orWhere('status', 'LIKE', "%{$search}%")
+                    ->orWhere('unit_type', 'LIKE', "%{$search}%")
+                    ->orWhereHas('category', function ($cat) use ($search) {
+                        $cat->where('name', 'LIKE', "%{$search}%");
+                    });
+            });
+        }
+
+        // Category Filter
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        // Status Filter
+        if (
+            $request->filled('status') &&
+            $request->status != 'All Status'
+        ) {
+            $query->where('status', $request->status);
+        }
+
+        // Unit Type Filter
+        if ($request->filled('unit_type')) {
+            $query->where('unit_type', $request->unit_type);
+        }
+
+        // Sorting
+        if ($request->filled('sort')) {
+
+            switch ($request->sort) {
+
+                case 'Name (A-Z)':
+                    $query->orderBy('name', 'asc');
+                    break;
+
+                case 'Name (Z-A)':
+                    $query->orderBy('name', 'desc');
+                    break;
+
+                case 'Price ↑':
+                    $query->orderBy('price', 'asc');
+                    break;
+
+                case 'Price ↓':
+                    $query->orderBy('price', 'desc');
+                    break;
+
+                case 'Stock ↑':
+                    $query->orderBy('stock', 'asc');
+                    break;
+
+                case 'Stock ↓':
+                    $query->orderBy('stock', 'desc');
+                    break;
+
+                default:
+                    $query->orderByDesc('created_at');
+                    break;
+            }
+        } else {
+            $query->orderByDesc('created_at');
+        }
+
+        $medicenes = $query->paginate(10)->withQueryString();
+
+        $category = CategoryModel::orderByDesc('created_at')->get();
 
         $medicenesall = medicineModel::count();
+
         $medicenesinstocks = medicineModel::where('quantity', '>', 5)->count();
 
         $mediceneslowstocks = medicineModel::where('quantity', '>', 0)
@@ -31,7 +107,18 @@ class MedicineController extends Controller
             ->count();
 
         $medicenesoutofstocks = medicineModel::where('quantity', 0)->count();
-        return view('admin.medicine', compact('medicenes', 'category', 'medicenesall', 'medicenesinstocks', 'mediceneslowstocks', 'medicenesoutofstocks'));
+
+        return view(
+            'admin.medicine',
+            compact(
+                'medicenes',
+                'category',
+                'medicenesall',
+                'medicenesinstocks',
+                'mediceneslowstocks',
+                'medicenesoutofstocks'
+            )
+        );
     }
     public function store(Request $request)
     {

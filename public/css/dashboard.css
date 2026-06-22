@@ -361,6 +361,10 @@ tbody tr:hover {
     box-shadow: var(--shadow-sm);
 }
 
+.top-selling {
+    height: 100%;
+}
+
 .panel-title {
     font-size: 18px;
     font-weight: 800;

@@ -13,9 +13,10 @@
             </p>
         </div>
 
-        <div class="um-actions">
-            <button class="um-btn um-btn-outline">⬇ Export CSV</button>
-        </div>
+        <a href="{{ route('users.export') }}" style="text-decoration: none;"
+            class="um-btn um-btn-outline um-btn-users">
+            ⬇ Export CSV
+        </a>
 
     </div>
 
@@ -35,7 +36,7 @@
             <div class="stat-label">Active Users</div>
             <div class="stat-value" id="statLow">{{ $useractive }}</div>
         </div>
-        <div class="stat-card" onclick="filterByStatus('Blocked')">
+        <div class="stat-card" onclick="filterByStatus('blocked')">
             <div class="stat-top">
                 <div class="stat-icon red"><i class="fa-solid fa-triangle-exclamation"></i></div>
             </div>
@@ -52,37 +53,76 @@
     </div>
 
     <!-- FILTER -->
+    <form method="GET">
 
-    <div class="um-filter">
+        <div class="um-filter">
 
-        <div class="um-filter-input">
-            <input type="text" id="userSearch"
-                placeholder="Filter by name or email...">
+            <div class="um-filter-input">
+                <input type="text"
+                    name="search"
+                    value="{{ request('search') }}"
+                    placeholder="Filter by name or email..."
+                    onchange="this.form.submit()">
+            </div>
+
+            <div class="um-select-wrap">
+                <select class="um-select"
+                    name="status"
+                    onchange="this.form.submit()">
+
+                    <option value="all">All Statuses</option>
+
+                    <option value="Active"
+                        {{ request('status')=='Active' ? 'selected' : '' }}>
+                        Active
+                    </option>
+
+                    <option value="blocked"
+                        {{ request('status')=='blocked' ? 'selected' : '' }}>
+                        Blocked
+                    </option>
+
+                </select>
+            </div>
+
+            <div class="um-select-wrap">
+                <select class="um-select"
+                    name="date"
+                    onchange="this.form.submit()">
+
+                    <option value="all">All</option>
+
+                    <option value="30"
+                        {{ request('date')=='30' ? 'selected' : '' }}>
+                        Joined (Last 30 Days)
+                    </option>
+
+                    <option value="7"
+                        {{ request('date')=='7' ? 'selected' : '' }}>
+                        Last 7 Days
+                    </option>
+
+                    <option value="90"
+                        {{ request('date')=='90' ? 'selected' : '' }}>
+                        Last 3 Months
+                    </option>
+
+                    <option value="all"
+                        {{ request('date')=='all' ? 'selected' : '' }}>
+                        All Time
+                    </option>
+
+                </select>
+            </div>
+
+            <a href="{{ route('user.index') }}"
+                class="um-clear">
+                Clear All
+            </a>
+
         </div>
 
-        <div class="um-select-wrap">
-            <select class="um-select" id="statusFilter">
-                <option value="all">All Statuses</option>
-                <option value="active">Active</option>
-                <option value="blocked">Blocked</option>
-                <option value="pending">Pending</option>
-            </select>
-        </div>
-
-        <div class="um-select-wrap">
-            <select class="um-select" id="dateFilter">
-                <option value="30">Joined (Last 30 Days)</option>
-                <option value="7">Last 7 Days</option>
-                <option value="90">Last 3 Months</option>
-                <option value="all">All Time</option>
-            </select>
-        </div>
-
-        <div class="um-clear" onclick="resetUserFilters()">
-            Clear All
-        </div>
-
-    </div>
+    </form>
 
     <!-- TABLE -->
 
@@ -133,9 +173,9 @@
                                     data-status="{{ $users->status }}"
                                     onclick="toggleUserStatus(this)">
 
-                                    @if($users->status == 'active')
+                                    @if($users->status == 'Active')
                                     🔓
-                                    @else
+                                    @elseif($users->status == 'blocked')
                                     🚫
                                     @endif
 
@@ -223,7 +263,7 @@
         let userId = el.dataset.id;
         let currentStatus = el.dataset.status;
 
-        let newStatus = (currentStatus === 'active') ? 'blocked' : 'active';
+        let newStatus = (currentStatus === 'Active') ? 'blocked' : 'Active';
 
         fetch('/user/toggle-status', {
                 method: 'POST',
@@ -245,7 +285,7 @@
                     el.dataset.status = newStatus;
 
                     // change icon
-                    el.innerHTML = (newStatus === 'active') ? '🔓' : '🚫';
+                    el.innerHTML = (newStatus === 'Active') ? '🔓' : '🚫';
                 }
 
             });
@@ -279,124 +319,6 @@
             .catch(error => {
                 console.log(error);
             });
-
-    }
-</script>
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-
-        const searchInput = document.getElementById("userSearch");
-        const statusFilter = document.getElementById("statusFilter");
-        const dateFilter = document.getElementById("dateFilter");
-
-        // EVENT LISTENERS
-        searchInput.addEventListener("keyup", filterUsers);
-        statusFilter.addEventListener("change", filterUsers);
-        dateFilter.addEventListener("change", filterUsers);
-
-    });
-
-    function filterUsers() {
-
-        let search =
-            document.getElementById("userSearch")
-            .value
-            .toLowerCase();
-
-        let status =
-            document.getElementById("statusFilter")
-            .value
-            .toLowerCase();
-
-        let days =
-            document.getElementById("dateFilter")
-            .value;
-
-        let rows =
-            document.querySelectorAll(".um-table tbody tr");
-
-        rows.forEach(row => {
-
-            // NAME
-            let name =
-                row.querySelector("h4")
-                .innerText
-                .toLowerCase();
-
-            // EMAIL
-            let email =
-                row.querySelector("p")
-                .innerText
-                .toLowerCase();
-
-            // USER STATUS
-            let statusIcon =
-                row.querySelector(".toggle-status");
-
-            let userStatus =
-                statusIcon.dataset.status
-                .toLowerCase();
-
-            // CREATED DATE
-            let joinedDate =
-                new Date(row.dataset.created);
-
-            let today = new Date();
-
-            let diffTime = today - joinedDate;
-
-            let diffDays =
-                diffTime / (1000 * 60 * 60 * 24);
-
-            // SEARCH FILTER
-            let matchSearch =
-                name.includes(search) ||
-                email.includes(search);
-
-            // STATUS FILTER
-            let matchStatus =
-                status === "all" ||
-                userStatus === status;
-
-            // DATE FILTER
-            let matchDate = true;
-
-            if (days !== "all") {
-
-                matchDate =
-                    diffDays <= parseInt(days);
-
-            }
-
-            // FINAL SHOW / HIDE
-            if (
-                matchSearch &&
-                matchStatus &&
-                matchDate
-            ) {
-
-                row.style.display = "";
-
-            } else {
-
-                row.style.display = "none";
-
-            }
-
-        });
-
-    }
-
-    // RESET FILTERS
-    function resetUserFilters() {
-
-        document.getElementById("userSearch").value = "";
-
-        document.getElementById("statusFilter").value = "all";
-
-        document.getElementById("dateFilter").value = "30";
-
-        filterUsers();
 
     }
 </script>

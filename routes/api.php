@@ -19,6 +19,7 @@ Route::post('/send-otp', [auth::class, 'sendOtp']);
 Route::post('/verify-otp', [auth::class, 'verifyOtp']);
 
 Route::post('/medicines', [api::class, 'getMedicines']);
+Route::get('/medicines-search', [api::class, 'searchMedicines']);
 Route::get('/medicines/{id}/related', [api::class, 'relatedMedicines']);
 Route::post('/categories', [api::class, 'getCategory']);
 Route::get('/banners', [api::class, 'getBanners']);

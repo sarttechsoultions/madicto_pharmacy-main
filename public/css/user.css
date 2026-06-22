@@ -50,6 +50,10 @@
     cursor: pointer;
 }
 
+.um-btn-users {
+    padding: 12px 18px !important;
+}
+
 .um-btn-outline {
     background: #fff;
     border: 1px solid var(--um-border);

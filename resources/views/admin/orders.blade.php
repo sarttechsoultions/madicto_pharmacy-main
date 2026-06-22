@@ -16,10 +16,6 @@
       <p>Manage prescription orders and pharmacy delivery cycles.</p>
     </div>
 
-    <div class="od-btns">
-      <button class="od-btn od-btn-outline">Export CSV</button>
-      <button class="od-btn od-btn-primary">+ Manual Order</button>
-    </div>
 
   </div>
 
@@ -111,69 +107,52 @@
 
             <!-- PAYMENT STATUS -->
             <td>
+              <div class="editable-select-wrap">
 
-              <select class="od-status-select"
-                onchange="updatePaymentStatus(this.value, {{ $order->id }})">
+                <i class="fa-solid fa-credit-card edit-icon"></i>
 
-                <option value="Pending"
-                  @selected($order->payment_status == 'Pending')>
-                  ● Pending
-                </option>
+                <select class="od-status-select payment-status"
+                  onchange="updatePaymentStatus(this.value, {{ $order->id }})">
 
-                <option value="Paid"
-                  @selected($order->payment_status == 'Paid')>
-                  ● Paid
-                </option>
+                  <option value="Pending" @selected($order->payment_status=='Pending')>
+                    Pending
+                  </option>
 
-                <option value="Failed"
-                  @selected($order->payment_status == 'Failed')>
-                  ● Failed
-                </option>
+                  <option value="Paid" @selected($order->payment_status=='Paid')>
+                    Paid
+                  </option>
 
-              </select>
+                  <option value="Failed" @selected($order->payment_status=='Failed')>
+                    Failed
+                  </option>
 
+                </select>
+
+              </div>
             </td>
 
 
             <!-- ORDER STATUS -->
             <td>
+              <div class="editable-select-wrap">
 
-              <select
-                class="od-status-select"
-                onchange="updateOrderStatus(this.value, {{ $order->id }})">
+                <i class="fa-solid fa-truck edit-icon"></i>
 
-                <option value="Pending"
-                  @selected($order->status == 'Pending')>
-                  ● Pending
-                </option>
+                <select class="od-status-select order-status"
+                  onchange="updateOrderStatus(this.value, {{ $order->id }})">
 
-                <option value="Confirmed"
-                  @selected($order->status == 'Confirmed')>
-                  ● Confirmed
-                </option>
+                  <option value="Pending" @selected($order->status=='Pending')>Pending</option>
+                  <option value="Confirmed" @selected($order->status=='Confirmed')>Confirmed</option>
+                  <option value="Processing" @selected($order->status=='Processing')>Processing</option>
+                  <option value="Shipped" @selected($order->status=='Shipped')>Shipped</option>
+                  <option value="Delivered" @selected($order->status=='Delivered')>Delivered</option>
+                  <option value="Cancelled" @selected($order->status=='Cancelled')>Cancelled</option>
 
-                <option value="Processing"
-                  @selected($order->status == 'Processing')>
-                  ● Processing
-                </option>
+                </select>
 
-                <option value="Shipped"
-                  @selected($order->status == 'Shipped')>
-                  ● Shipped
-                </option>
+                <i class="fa-solid fa-chevron-down edit-arrow"></i>
 
-                <option value="Delivered"
-                  @selected($order->status == 'Delivered')>
-                  ● Delivered
-                </option>
-
-                <option value="Cancelled"
-                  @selected($order->status == 'Cancelled')>
-                  ● Cancelled
-                </option>
-
-              </select>
-
+              </div>
             </td>
             <td>
 
@@ -210,12 +189,21 @@
             </td>
 
             <td>{{ $order->created_at->format('M j, Y') }}</td>
+            <td>
+              <a href="{{ route('orders.invoice',$order->id) }}"
+                class="od-view-btn"
+                target="_blank">
+                Invoice
+              </a>
+            </td>
 
-            <td> <button class="od-delete-btn" onclick="openDeleteModal(this)">
+            <td>
+              <button class="od-delete-btn" onclick="openDeleteModal(this)">
 
                 Delete
 
-              </button></td>
+              </button>
+            </td>
 
           </tr>
           @endforeach

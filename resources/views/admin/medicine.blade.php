@@ -71,44 +71,97 @@
     </div>
 
     <!-- FILTER BAR -->
-    <div class="filter-bar">
-        <div class="quick-filter">
-            <i class="fa-solid fa-filter" style="color:var(--muted);font-size:.8rem;"></i>
-            <input type="text" id="filterInput" placeholder="Quick filter by name…" oninput="filterTable()" />
+    <form method="GET" action="{{ url()->current() }}">
+        <div class="filter-bar">
+
+            <div class="quick-filter">
+                <i class="fa-solid fa-filter"></i>
+
+                <input type="text"
+                    name="search"
+                    value="{{ request('search') }}"
+                    placeholder="Search medicine..."
+                    onchange="this.form.submit()">
+            </div>
+
+            <div class="filter-group">
+                <label>Unit Type:</label>
+
+                <select class="filter-select"
+                    name="unit_type"
+                    onchange="this.form.submit()">
+
+                    <option value="">All Unit Types</option>
+
+                    <option value="Tablets">Tablets</option>
+                    <option value="Capsules">Capsules</option>
+                    <option value="Syrup (ml)">Syrup (ml)</option>
+                    <option value="Injection (vial)">Injection (vial)</option>
+                    <option value="Cream (g)">Cream (g)</option>
+                    <option value="Drops">Drops</option>
+                    <option value="Patch">Patch</option>
+
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Category:</label>
+
+                <select class="filter-select"
+                    name="category_id"
+                    onchange="this.form.submit()">
+
+                    <option value="">All Categories</option>
+
+                    @foreach($category as $cat)
+                    <option value="{{ $cat->id }}"
+                        {{ request('category_id') == $cat->id ? 'selected' : '' }}>
+                        {{ $cat->name }}
+                    </option>
+                    @endforeach
+
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Status:</label>
+
+                <select class="filter-select"
+                    name="status"
+                    onchange="this.form.submit()">
+
+                    <option value="">All Status</option>
+                    <option value="In Stock" {{ request('status')=='In Stock' ? 'selected' : '' }}>In Stock</option>
+                    <option value="Low Stock" {{ request('status')=='Low Stock' ? 'selected' : '' }}>Low Stock</option>
+                    <option value="Out of Stock" {{ request('status')=='Out of Stock' ? 'selected' : '' }}>Out of Stock</option>
+
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Sort:</label>
+
+                <select class="filter-select"
+                    name="sort"
+                    onchange="this.form.submit()">
+
+                    <option value="">Default</option>
+                    <option value="Name (A-Z)">Name (A-Z)</option>
+                    <option value="Name (Z-A)">Name (Z-A)</option>
+                    <option value="Price ↑">Price ↑</option>
+                    <option value="Price ↓">Price ↓</option>
+                    <option value="Stock ↑">Stock ↑</option>
+                    <option value="Stock ↓">Stock ↓</option>
+
+                </select>
+            </div>
+
+            <a href="{{ url()->current() }}" class="reset-btn">
+                <i class="fa-solid fa-rotate-right"></i>
+            </a>
+
         </div>
-        <div class="filter-group">
-            <label>Category:</label>
-            <select class="filter-select" id="catFilter" onchange="filterTable()">
-                <option disabled selected>All Categories</option>
-                @foreach($category as $cat)
-                <option value="{{ $cat->id }}">{{ $cat->name }}</option>
-                @endforeach
-            </select>
-        </div>
-        <div class="filter-group">
-            <label>Status:</label>
-            <select class="filter-select" id="statusFilter" onchange="filterTable()">
-                <option>All Status</option>
-                <option>In Stock</option>
-                <option>Low Stock</option>
-                <option>Out of Stock</option>
-            </select>
-        </div>
-        <div class="filter-group">
-            <label>Sort:</label>
-            <select class="filter-select" id="sortFilter" onchange="filterTable()">
-                <option>Name (A-Z)</option>
-                <option>Name (Z-A)</option>
-                <option>Price ↑</option>
-                <option>Price ↓</option>
-                <option>Stock ↑</option>
-                <option>Stock ↓</option>
-            </select>
-        </div>
-        <button class="reset-btn" title="Reset filters" onclick="resetFilters()">
-            <i class="fa-solid fa-rotate-right"></i>
-        </button>
-    </div>
+    </form>
 
     <!-- TABLE -->
     <div class="table-card">
@@ -120,6 +173,7 @@
                         <th>Image</th>
                         <th>Medicine</th>
                         <th>Category</th>
+                        <th>Unit Type</th>
                         <th>Price</th>
                         <th>Stock</th>
                         <th>Status</th>
@@ -143,6 +197,7 @@
                             <h4>{{ $medicine->name }}</h4>
                         </td>
                         <td>{{ $medicine->category->name ?? 'N/A' }}</td>
+                        <td>{{ $medicine->unit_type }}</td>
                         <td>₹ {{ number_format($medicine->price, 2) }}</td>
                         <td>{{ $medicine->stock }}</td>
                         <td>{{ $medicine->status }}</td>
@@ -163,15 +218,15 @@
                             <div class="actions-cell">
                                 <button
                                     class="action-btn edit"
-                                    onclick="openEditModal(
-            '{{ $medicine->id }}',
-            '{{ $medicine->name }}',
-            '{{ $medicine->category_id }}',
-            '{{ $medicine->price }}',
-            '{{ $medicine->stock }}',
-            '{{ $medicine->quantity }}',
-            '{{ $medicine->status }}'
-        )">
+                                    onclick='openEditModal(
+        @json($medicine->id),
+        @json($medicine->name),
+        @json($medicine->category_id),
+        @json($medicine->price),
+        @json($medicine->stock),
+        @json($medicine->quantity),
+        @json($medicine->status)
+    )'>
                                     <i class="fa-solid fa-pen"></i>
                                 </button>
 
@@ -192,7 +247,7 @@
         <div class="table-footer">
 
             <div class="pagination">
-                {{ $medicenes->links() }}
+                {{ $medicenes->appends(request()->query())->links() }}
             </div>
 
         </div>
@@ -382,11 +437,11 @@
                             <div class="m-section-title"><i class="fa-solid fa-shield-halved"></i> Compliance</div>
                             <div class="mf-group" style="margin-bottom:14px;">
                                 <label>Manufacture Date</label>
-                                <input type="date" id="f-mfgdate" name="manufacture_date" />
+                                <input type="date" id="f-mfgdate" name="manufacture_date" required />
                             </div>
                             <div class="mf-group" style="margin-bottom:0;">
                                 <label>Expiry Date *</label>
-                                <input type="date" id="f-expiry" name="expiry_date" />
+                                <input type="date" id="f-expiry" name="expiry_date" required />
                             </div>
                             <div class="toggle-row">
                                 <div class="toggle-info">
@@ -593,98 +648,6 @@
 </div>
 
 <script src="{{ asset('js/main.js') }}"></script>
-<script>
-    function filterTable() {
-        let input = document.getElementById("filterInput").value.toLowerCase();
-        let catFilter = document.getElementById("catFilter").value;
-        let statusFilter = document.getElementById("statusFilter").value;
-        let sortFilter = document.getElementById("sortFilter").value;
-
-        let table = document.querySelector("tbody");
-        let rows = Array.from(table.querySelectorAll("tr"));
-
-        rows.forEach(row => {
-            let name = row.cells[2].innerText.toLowerCase();
-            let category = row.cells[3].innerText.trim();
-            let price = parseFloat(row.cells[4].innerText.replace("₹", "").replace(",", ""));
-            let stock = parseInt(row.cells[5].innerText);
-            let status = row.cells[6].innerText.trim();
-
-            let matchName = name.includes(input);
-
-            // CATEGORY MATCH
-            let selectedCatText = "";
-            let catSelect = document.getElementById("catFilter");
-
-            if (catSelect.selectedIndex > 0) {
-                selectedCatText = catSelect.options[catSelect.selectedIndex].text.trim();
-            }
-
-            let matchCategory =
-                selectedCatText === "" ||
-                category === selectedCatText;
-
-            // STATUS MATCH
-            let matchStatus =
-                statusFilter === "All Status" ||
-                status === statusFilter;
-
-            if (matchName && matchCategory && matchStatus) {
-                row.style.display = "";
-            } else {
-                row.style.display = "none";
-            }
-        });
-
-        // SORTING
-        let visibleRows = rows.filter(row => row.style.display !== "none");
-
-        visibleRows.sort((a, b) => {
-            let nameA = a.cells[2].innerText.toLowerCase();
-            let nameB = b.cells[2].innerText.toLowerCase();
-
-            let priceA = parseFloat(a.cells[4].innerText.replace("₹", "").replace(",", ""));
-            let priceB = parseFloat(b.cells[4].innerText.replace("₹", "").replace(",", ""));
-
-            let stockA = parseInt(a.cells[5].innerText);
-            let stockB = parseInt(b.cells[5].innerText);
-
-            switch (sortFilter) {
-                case "Name (A-Z)":
-                    return nameA.localeCompare(nameB);
-
-                case "Name (Z-A)":
-                    return nameB.localeCompare(nameA);
-
-                case "Price ↑":
-                    return priceA - priceB;
-
-                case "Price ↓":
-                    return priceB - priceA;
-
-                case "Stock ↑":
-                    return stockA - stockB;
-
-                case "Stock ↓":
-                    return stockB - stockA;
-
-                default:
-                    return 0;
-            }
-        });
-
-        visibleRows.forEach(row => table.appendChild(row));
-    }
-
-    function resetFilters() {
-        document.getElementById("filterInput").value = "";
-        document.getElementById("catFilter").selectedIndex = 0;
-        document.getElementById("statusFilter").selectedIndex = 0;
-        document.getElementById("sortFilter").selectedIndex = 0;
-
-        filterTable();
-    }
-</script>
 
 <script>
     function previewImages(event) {

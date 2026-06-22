@@ -17,6 +17,9 @@
     <link rel="stylesheet" href="{{ asset('css/setting.css') }}">
     <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
     <link rel="stylesheet" href="{{ asset('css/review.css') }}">
+
+    <!-- <link rel="stylesheet" href="{{ asset('css/article-header.css') }}"> -->
+
     <link rel="icon" type="image/png" href="{{ asset('image/favicon.webp') }}" />
 
 
@@ -27,7 +30,9 @@
     <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-logo">
-            <img src="{{ asset('image/medicto-logo.jpg.webp') }}" alt="Medicto Logo" class="logo-img" />
+            <a href="{{ route('dashboard') }}">
+                <img src="{{ asset('image/medicto-logo.jpg.webp') }}" alt="Medicto Logo" class="logo-img" />
+            </a>
             <button class="sidebar-close-btn" id="sidebarCloseBtn" title="Collapse sidebar">
                 <i class="fa-solid fa-chevron-left"></i>
             </button>
@@ -72,7 +77,7 @@
             </a>
 
             <div class="nav-label" style="margin-top:10px;">Others</div>
-            <a class="nav-item" href="#">
+            <a class="nav-item {{ request()->routeIs('notifications') ? 'active' : ''  }}" href="{{ route('notifications') }}">
                 <i class="fa-solid fa-bell"></i><span>Notifications</span>
             </a>
             <a class="nav-item {{ request()->routeIs('reviews.index') ? 'active' : '' }}" href="{{ route('reviews.index') }}">

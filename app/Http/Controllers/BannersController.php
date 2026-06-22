@@ -16,13 +16,10 @@ class BannersController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'title' => 'required',
-            'description' => 'required',
             'img' => 'required|image',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'banner_images.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-            'discount' => 'required|numeric|min:0|max:100',
         ]);
 
         $imagePath = null;
@@ -86,5 +83,41 @@ class BannersController extends Controller
         $banner->delete();
 
         return redirect()->back()->with('success', 'Banner deleted successfully.');
+    }
+
+    public function updatedata(Request $request, $id)
+    {
+        $banner = BannersModel::findOrFail($id);
+
+        $data = [
+            'title' => $request->title,
+            'description' => $request->description,
+            'discount' => $request->discount,
+            'start_date' => $request->start_date,
+            'end_date' => $request->end_date,
+            'status' => $request->status,
+        ];
+
+        if ($request->hasFile('img')) {
+
+            $image = $request->file('img');
+
+            $imageName = time() . '_' .
+                $image->getClientOriginalName();
+
+            $image->move(
+                public_path('uploads/banners'),
+                $imageName
+            );
+
+            $data['img'] =
+                'uploads/banners/' . $imageName;
+        }
+
+        $banner->update($data);
+
+        return redirect()
+            ->back()
+            ->with('success', 'Banner updated successfully');
     }
 }

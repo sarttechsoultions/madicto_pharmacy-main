@@ -162,10 +162,10 @@
                     <h3>Customer Details</h3>
 
                     <div class="o-details-user">
-                        <div class="o-details-user-img">{{ substr($order->user->name ?? 'N/A', 0, 2) }}</div>
+                        <div class="o-details-user-img">{{ substr($order->address->full_name ?? 'N/A', 0, 2) }}</div>
                         <div>
-                            <h4>{{ $order->user->name ?? 'N/A' }}</h4>
-                            <p>Patient ID: #PAT-{{ $order->user->id ?? 'N/A' }}</p>
+                            <h4>{{ $order->address->full_name ?? 'N/A' }}</h4>
+                            <p>Patient ID: #PAT-{{ $order->address->id ?? 'N/A' }}</p>
                         </div>
                     </div>
 
@@ -176,7 +176,7 @@
 
                     <div class="o-details-info">
                         <h5>PHONE NUMBER</h5>
-                        <p>+91 {{ $order->user->number ?? 'N/A' }}</p>
+                        <p>+91 {{ $order->address->phone_number ?? 'N/A' }}</p>
                     </div>
 
                     <div class="o-details-info">

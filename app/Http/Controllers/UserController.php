@@ -7,15 +7,65 @@ use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $user = User::where('role', '2')->with('orders')->paginate(20);
+        $query = User::where('role', '2')->with('orders');
+
+        // Search Name / Email / Number
+        if ($request->filled('search')) {
+
+            $search = $request->search;
+
+            $query->where(function ($q) use ($search) {
+
+                $q->where('name', 'LIKE', "%{$search}%")
+                    ->orWhere('email', 'LIKE', "%{$search}%")
+                    ->orWhere('number', 'LIKE', "%{$search}%");
+            });
+        }
+
+        // Status Filter
+        if (
+            $request->filled('status')
+            && $request->status != 'all'
+        ) {
+            $query->where('status', $request->status);
+        }
+
+        // Date Filter
+        if ($request->filled('date') && $request->date != 'all') {
+
+            $days = (int) $request->date;
+
+            $query->where(
+                'created_at',
+                '>=',
+                now()->subDays($days)
+            );
+        }
+
+        $user = $query->latest()
+            ->paginate(20)
+            ->withQueryString();
+
         $adminss = User::where('role', '1')->paginate(20);
+
         $userall = User::count();
         $useractive = User::where('status', 'Active')->count();
-        $userblocked = User::where('status', 'Blocked')->count();
+        $userblocked = User::where('status', 'blocked')->count();
         $admins = User::where('role', '1')->count();
-        return view('admin.user', compact('user', 'adminss', 'userall', 'useractive', 'userblocked', 'admins'));
+
+        return view(
+            'admin.user',
+            compact(
+                'user',
+                'adminss',
+                'userall',
+                'useractive',
+                'userblocked',
+                'admins'
+            )
+        );
     }
 
     public function profile()
@@ -95,5 +145,74 @@ class UserController extends Controller
         ]);
 
         return back()->with('success', 'User created');
+    }
+
+    public function export()
+    {
+        $fileName = 'users_' . date('Ymd_His') . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename=$fileName",
+        ];
+
+        $callback = function () {
+
+            $file = fopen('php://output', 'w');
+
+            // Header Row
+            fputcsv($file, [
+                'ID',
+                'Name',
+                'Email',
+                'Mobile',
+                'Wallet',
+                'Status',
+                'Role',
+                'Refer Code',
+                'Total Orders',
+            ]);
+
+            User::with('orders')->chunk(500, function ($users) use ($file) {
+
+                foreach ($users as $user) {
+
+                    fputcsv($file, [
+                        $user->id,
+                        $user->name,
+                        $user->email,
+                        $user->number,
+                        $user->wallet,
+                        $user->status,
+                        $user->role,
+                        $user->referral_code,
+                        $user->orders->count(),
+                    ]);
+                }
+            });
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+
+    public function saveFcmToken(Request $request)
+    {
+        $request->validate([
+            'fcm_token' => 'required|string'
+        ]);
+
+        $user = auth()->user();
+
+        $user->update([
+            'fcm_token' => $request->fcm_token
+        ]);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'FCM token updated successfully'
+        ]);
     }
 }

@@ -90,18 +90,29 @@ class OrdersController extends Controller
     public function details($id)
     {
         $order = OrdersModel::with([
-            'user',
-            'items'
+            'items',
+            'address'
         ])->findOrFail($id);
 
         return view('admin.order-details', compact('order'));
     }
-
     public function destroy($id)
     {
         $order = OrdersModel::findOrFail($id);
         $order->delete();
 
         return redirect()->back()->with('success', 'Order deleted successfully');
+    }
+
+
+    public function invoice($id)
+    {
+        $order = OrdersModel::with([
+            'user',
+            'address',
+            'items'
+        ])->findOrFail($id);
+
+        return view('admin.invoice', compact('order'));
     }
 }
