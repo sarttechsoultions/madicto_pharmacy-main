@@ -415,8 +415,7 @@
         description,
         discount,
         start_date,
-        end_date,
-        status
+        end_date
     ) {
 
         document.getElementById('editBannerForm').action =
@@ -437,8 +436,6 @@
         document.getElementById('edit_end_date').value =
             end_date ?? '';
 
-        document.getElementById('edit_status').value =
-            status ?? 'inactive';
 
         document.getElementById('editBannerModal').style.display =
             'flex';
