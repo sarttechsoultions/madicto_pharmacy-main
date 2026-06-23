@@ -247,10 +247,11 @@ img {
 
 /* LOGO */
 .header-logo .logo-image {
-  height: 64px;
-  width: auto;
-  object-fit: contain;
-  transition: height 0.35s ease;
+    height: 55px;
+    width: auto;
+    padding: 5px;
+    object-fit: contain;
+    transition: height 0.35s ease;
 }
 
 .header.scrolled .logo-image {
@@ -352,7 +353,7 @@ img {
 
 /* Push page content below fixed header */
 body {
-  padding-top: 70px;
+  padding-top: 10px;
 }
 
 
@@ -433,9 +434,7 @@ body {
     height: 44px;
   }
 
-  body {
-    padding-top: 72px;
-  }
+
 }
 
 /* Compact on very small screens */
@@ -4515,6 +4514,18 @@ body {
 
 
 
+    .hero-section {
+        min-height: auto;
+        height: auto;
+    } 
+.hero-image-area {
+        order: 2;
+    }
+ 
+    .hero-content {
+        order: 1;
+    }
+ 
 
 .old-price {
   text-decoration: line-through;
@@ -4536,4 +4547,12 @@ body {
   border-radius: 4px;
   font-size: 12px;
   margin-left: 8px;
+}
+
+
+.hero-section{
+    min-height: calc(100vh - 80px);
+    display: flex;
+    align-items: center;
+    padding: 60px 0;
 }

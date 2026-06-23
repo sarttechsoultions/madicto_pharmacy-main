@@ -231,8 +231,7 @@
         @json($medicine->category_id),
         @json($medicine->price),
         @json($medicine->stock),
-        @json($medicine->quantity),
-        @json($medicine->status)
+        @json($medicine->quantity)
     )'>
                                     <i class="fa-solid fa-pen"></i>
                                 </button>
@@ -575,14 +574,6 @@
                         <input type="number" name="quantity" id="e-qty" min="0" />
                     </div>
 
-                    <div class="mf-group">
-                        <label>Status</label>
-
-                        <select name="status" id="e-status">
-                            <option value="In Stock">In Stock</option>
-                            <option value="Out of Stock">Out of Stock</option>
-                        </select>
-                    </div>
 
                 </div>
 

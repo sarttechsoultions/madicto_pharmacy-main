@@ -442,15 +442,13 @@ function openEditModal(
   category_id,
   price,
   stock,
-  quantity,
-  status
+  quantity
 ) {
   document.getElementById('e-name').value = name ?? '';
   document.getElementById('e-cat').value = category_id ?? '';
   document.getElementById('e-price').value = price ?? '';
   document.getElementById('e-stock').value = stock ?? '';
   document.getElementById('e-qty').value = quantity ?? '';
-  document.getElementById('e-status').value = status ?? '';
 
   // Dynamic update route
   document.getElementById('editForm').action =

@@ -7,18 +7,8 @@
     <title>Medicto Pharmacy – Medicines Inventory</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="{{ asset('css/maim.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/category.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/orders.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/order-detaails.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/user.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/banner.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/coustmer-medicine.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/setting.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/review.css') }}">
 
-    <!-- <link rel="stylesheet" href="{{ asset('css/article-header.css') }}"> -->
+    <link rel="stylesheet" href="{{ asset('css/article-header.css') }}">
 
     <link rel="icon" type="image/png" href="{{ asset('image/favicon.webp') }}" />
 

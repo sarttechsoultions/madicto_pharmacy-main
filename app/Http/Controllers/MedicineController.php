@@ -152,7 +152,7 @@ class MedicineController extends Controller
             $data->batch_no = $request->batch_no;
             $data->usage_instructions = $request->usage_instructions;
             $data->discount = $request->discount;
-            $data->quantity = $request->quantity;
+
             $data->stock = $request->stock;
             $data->manufacturer = $request->manufacturer;
             $data->reorder_level = $request->reorder_level;
@@ -163,6 +163,17 @@ class MedicineController extends Controller
             $data->status = $request->status ?? 'In Stock';
             $data->manufacture_date = $request->manufacture_date;
             $data->expiry_date = $request->expiry_date;
+
+            $data->quantity = $request->quantity;
+
+            // Quantity based status
+            if ($request->quantity > 5) {
+                $data->status = 'In Stock';
+            } elseif ($request->quantity > 0) {
+                $data->status = 'Low Stock';
+            } else {
+                $data->status = 'Out of Stock';
+            }
 
 
             /* Single Image */
@@ -223,10 +234,17 @@ class MedicineController extends Controller
             $medicine->name = $request->name;
             $medicine->category_id = $request->category_id;
             $medicine->price = $request->price;
-            $medicine->quantity = $request->quantity;
             $medicine->stock = $request->stock;
+            $medicine->quantity = $request->quantity;
 
-            $medicine->status = $request->status;
+            // Quantity based status
+            if ($request->quantity > 5) {
+                $medicine->status = 'In Stock';
+            } elseif ($request->quantity > 0) {
+                $medicine->status = 'Low Stock';
+            } else {
+                $medicine->status = 'Out of Stock';
+            }
 
             $medicine->save();
 

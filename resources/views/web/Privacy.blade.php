@@ -27,7 +27,7 @@
   <meta name="twitter:description" content="Order genuine medicines, vitamins & health essentials online.">
   <meta name="twitter:image" content="https://medictopharmacy.com/image/hero-image.png">
 
-  <link rel="icon" type="image/png" href="assets/image/favicon.webp">
+   <link rel="icon" type="image/png" href="{{ asset('image/favicon.webp') }}" />
   <link rel="preload" href="image/hero-image.png" as="image">
   <link rel="stylesheet" href="{{ asset('css/main.css') }}">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
