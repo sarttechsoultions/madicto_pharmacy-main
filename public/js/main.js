@@ -249,8 +249,6 @@ function openModal(draft = null) {
 
   document.getElementById('addMedicineModal').classList.add('open');
   document.body.style.overflow = 'hidden';
-  document.getElementById('thumb1').innerHTML = '';
-  document.getElementById('thumb2').innerHTML = '';
 }
 
 function closeModal() {

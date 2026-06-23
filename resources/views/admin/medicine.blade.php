@@ -317,7 +317,7 @@
                             <div class="mf-row">
                                 <div class="mf-group">
                                     <label>Medicine Name *</label>
-                                    <input type="text" name="name" placeholder="e.g. Amoxicillin 500mg" />
+                                    <input type="text" id="f-name" name="name" placeholder="e.g. Amoxicillin 500mg" />
                                 </div>
                                 <div class="mf-group">
                                     <label>Category *</label>
@@ -332,11 +332,11 @@
                             <div class="mf-row">
                                 <div class="mf-group">
                                     <label>Manufacturer</label>
-                                    <input type="text" name="manufacturer" placeholder="e.g. Sun Pharma" />
+                                    <input type="text" id="f-mfg" name="manufacturer" placeholder="e.g. Sun Pharma" />
                                 </div>
                                 <div class="mf-group">
                                     <label>Batch / Lot Number</label>
-                                    <input type="text" name="batch_no" placeholder="e.g. BATCH-2024-001" />
+                                    <input type="text" name="batch_no" id="f-batch" placeholder="e.g. BATCH-2024-001" />
                                 </div>
                             </div>
                             <div class="mf-row single">
