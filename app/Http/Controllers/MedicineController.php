@@ -45,11 +45,24 @@ class MedicineController extends Controller
         }
 
         // Status Filter
-        if (
-            $request->filled('status') &&
-            $request->status != 'All Status'
-        ) {
-            $query->where('status', $request->status);
+        // Status Filter (Quantity Based)
+        if ($request->filled('status')) {
+
+            switch ($request->status) {
+
+                case 'In Stock':
+                    $query->where('quantity', '>', 5);
+                    break;
+
+                case 'Low Stock':
+                    $query->where('quantity', '>', 0)
+                        ->where('quantity', '<=', 5);
+                    break;
+
+                case 'Out of Stock':
+                    $query->where('quantity', 0);
+                    break;
+            }
         }
 
         // Unit Type Filter

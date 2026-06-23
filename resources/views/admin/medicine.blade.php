@@ -200,7 +200,14 @@
                         <td>{{ $medicine->unit_type }}</td>
                         <td>₹ {{ number_format($medicine->price, 2) }}</td>
                         <td>{{ $medicine->stock }}</td>
-                        <td>{{ $medicine->status }}</td>
+                        <td>@if($medicine->quantity > 5)
+                            <span class="badge bg-success">In Stock</span>
+                            @elseif($medicine->quantity > 0)
+                            <span class="badge bg-warning">Low Stock</span>
+                            @else
+                            <span class="badge bg-danger">Out of Stock</span>
+                            @endif
+                        </td>
                         <td>
                             <form action="{{ route('medicine.dod', $medicine->id) }}"
                                 method="POST">
