@@ -199,7 +199,7 @@
                         <td>{{ $medicine->category->name ?? 'N/A' }}</td>
                         <td>{{ $medicine->unit_type }}</td>
                         <td>₹ {{ number_format($medicine->price, 2) }}</td>
-                        <td>{{ $medicine->stock }}</td>
+                        <td>{{ $medicine->quantity }}</td>
                         <td>@if($medicine->quantity > 5)
                             <span class="badge bg-success">In Stock</span>
                             @elseif($medicine->quantity > 0)
