@@ -56,4 +56,19 @@ class User extends Authenticatable
     {
         return $this->hasMany(OrdersModel::class, 'coustmer_id');
     }
+
+    public function reviews()
+    {
+        return $this->hasMany(ReviewModel::class, 'coustmer_id');
+    }
+
+    public function addresses()
+    {
+        return $this->hasMany(AddressModel::class, 'coustmer_id');
+    }
+
+    public function favorites()
+    {
+        return $this->hasMany(MedicineFavourite::class, 'coustmer_id');
+    }
 }

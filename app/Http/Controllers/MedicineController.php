@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Imports\MedicineImport;
 use App\Exports\MedicineSampleExport;
+use App\Models\ReviewModel;
 use Maatwebsite\Excel\Facades\Excel;
 use Exception;
 
@@ -153,7 +154,6 @@ class MedicineController extends Controller
             $data->usage_instructions = $request->usage_instructions;
             $data->discount = $request->discount;
 
-            $data->stock = $request->stock;
             $data->manufacturer = $request->manufacturer;
             $data->reorder_level = $request->reorder_level;
             $data->description = $request->description;
@@ -223,8 +223,9 @@ class MedicineController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'price' => 'required|numeric',
-            'quantity' => 'required|numeric',
+            'price' => 'required',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'medicine_image.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
         try {
@@ -233,8 +234,18 @@ class MedicineController extends Controller
 
             $medicine->name = $request->name;
             $medicine->category_id = $request->category_id;
+            $medicine->batch_no = $request->batch_no;
+            $medicine->usage_instructions = $request->usage_instructions;
+            $medicine->discount = $request->discount;
+
+            $medicine->manufacturer = $request->manufacturer;
+            $medicine->reorder_level = $request->reorder_level;
+            $medicine->description = $request->description;
             $medicine->price = $request->price;
-            $medicine->stock = $request->stock;
+            $medicine->unit_type = $request->unit_type;
+            $medicine->pack_size = $request->pack_size;
+            $medicine->manufacture_date = $request->manufacture_date;
+            $medicine->expiry_date = $request->expiry_date;
             $medicine->quantity = $request->quantity;
 
             // Quantity based status
@@ -246,16 +257,71 @@ class MedicineController extends Controller
                 $medicine->status = 'Out of Stock';
             }
 
+            /*
+        |--------------------------------------------------------------------------
+        | Main Image
+        |--------------------------------------------------------------------------
+        */
+
+            if ($request->hasFile('image')) {
+
+                // Old image delete
+                if ($medicine->image && file_exists(public_path($medicine->image))) {
+                    unlink(public_path($medicine->image));
+                }
+
+                $img = $request->file('image');
+
+                $imageName = time() . '_main_' . uniqid() . '.' . $img->getClientOriginalExtension();
+
+                $img->move(public_path('uploads/medicine'), $imageName);
+
+                $medicine->image = 'uploads/medicine/' . $imageName;
+            }
+
+            /*
+        |--------------------------------------------------------------------------
+        | Gallery Images
+        |--------------------------------------------------------------------------
+        */
+
+            if ($request->hasFile('medicine_image')) {
+
+                // Delete old gallery images
+                if (!empty($medicine->medicine_image)) {
+
+                    foreach (json_decode($medicine->medicine_image, true) as $oldImage) {
+
+                        if (file_exists(public_path($oldImage))) {
+                            unlink(public_path($oldImage));
+                        }
+                    }
+                }
+
+                $gallery = [];
+
+                foreach ($request->file('medicine_image') as $img) {
+
+                    $fileName = time() . '_' . uniqid() . '.' . $img->getClientOriginalExtension();
+
+                    $img->move(public_path('uploads/medicine/gallery'), $fileName);
+
+                    $gallery[] = 'uploads/medicine/gallery/' . $fileName;
+                }
+
+                $medicine->medicine_image = json_encode($gallery);
+            }
+
             $medicine->save();
 
-            return redirect()->back()
-                ->with('success', 'Medicine updated successfully.');
+            return redirect()->back()->with('success', 'Medicine updated successfully!');
         } catch (Exception $e) {
 
             Log::error($e->getMessage());
 
             return redirect()->back()
-                ->with('error', 'Something went wrong.');
+                ->withInput()
+                ->with('error', 'Something went wrong! ' . $e->getMessage());
         }
     }
 
@@ -310,6 +376,45 @@ class MedicineController extends Controller
         return Excel::download(
             new MedicineSampleExport,
             'medicine_sample.xlsx'
+        );
+    }
+
+    public function show($id)
+    {
+
+        $medicine = medicineModel::with([
+            'category',
+            'reviews.coustmer'
+        ])->findOrFail($id);
+
+        $averageRating = ReviewModel::where('medicine_id', $id)
+            ->avg('rating');
+
+        $totalReviews = ReviewModel::where('medicine_id', $id)
+            ->count();
+
+        $five = ReviewModel::where('medicine_id', $id)->where('rating', 5)->count();
+
+        $four = ReviewModel::where('medicine_id', $id)->where('rating', 4)->count();
+
+        $three = ReviewModel::where('medicine_id', $id)->where('rating', 3)->count();
+
+        $two = ReviewModel::where('medicine_id', $id)->where('rating', 2)->count();
+
+        $one = ReviewModel::where('medicine_id', $id)->where('rating', 1)->count();
+
+        return view(
+            'admin.medicine-details',
+            compact(
+                'medicine',
+                'averageRating',
+                'totalReviews',
+                'five',
+                'four',
+                'three',
+                'two',
+                'one'
+            )
         );
     }
 }

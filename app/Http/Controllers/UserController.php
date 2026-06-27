@@ -215,4 +215,45 @@ class UserController extends Controller
             'message' => 'FCM token updated successfully'
         ]);
     }
+
+
+    public function show($id)
+    {
+        $user = User::with([
+            'orders.items',
+            'reviews.medicine',
+            'addresses',
+            'favorites.medicine'
+        ])->findOrFail($id);
+
+        $totalOrders = $user->orders->count();
+
+        $completedOrders = $user->orders
+            ->where('status', 'Delivered')
+            ->count();
+
+        $pendingOrders = $user->orders
+            ->where('status', 'Pending')
+            ->count();
+
+        $cancelledOrders = $user->orders
+            ->where('status', 'Cancelled')
+            ->count();
+
+        $totalSpent = $user->orders
+            ->where('status', 'Delivered')
+            ->sum('total_amount');
+
+        return view(
+            'admin.user-details',
+            compact(
+                'user',
+                'totalOrders',
+                'completedOrders',
+                'pendingOrders',
+                'cancelledOrders',
+                'totalSpent'
+            )
+        );
+    }
 }

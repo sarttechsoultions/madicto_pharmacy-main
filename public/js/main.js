@@ -431,33 +431,62 @@ function updateDraftBadge() {
   renderDraftPanel();
 }
 
-/* ══════════════════════
-   EDIT MODAL
-══════════════════════ */
-function openEditModal(
-  id,
-  name,
-  category_id,
-  price,
-  stock,
-  quantity
-) {
-  document.getElementById('e-name').value = name ?? '';
-  document.getElementById('e-cat').value = category_id ?? '';
-  document.getElementById('e-price').value = price ?? '';
-  document.getElementById('e-stock').value = stock ?? '';
-  document.getElementById('e-qty').value = quantity ?? '';
+function editMedicine(data) {
+  openModal();
 
-  // Dynamic update route
-  document.getElementById('editForm').action =
-    `/admin/medicine/${id}`;
+  document.getElementById('modalTitle').innerHTML = 'Edit Medicine';
+  document.getElementById('modalBreadcrumb').innerHTML = 'Edit Medicine';
+  document.getElementById('publishBtnText').innerHTML = 'Update Medicine';
 
-  document.getElementById('editModal').classList.add('open');
-}
+  let form = document.getElementById('medicineForm');
 
-function closeEditModal() {
+  form.action = "/medicine/" + data.id;
 
-  document.getElementById('editModal').classList.remove('open');
+  document.getElementById('formMethod').value = "PUT";
+
+  document.getElementById('medicine_id').value = data.id;
+
+  document.getElementById('f-name').value = data.name ?? '';
+  document.getElementById('f-cat').value = data.category_id ?? '';
+  document.getElementById('f-price').value = data.price ?? '';
+  document.getElementById('f-stock').value = data.stock ?? '';
+  document.getElementById('f-quantity').value = data.quantity ?? '';
+
+  if (document.getElementById('f-mfg'))
+    document.getElementById('f-mfg').value = data.manufacturer ?? '';
+
+  if (document.getElementById('f-batch'))
+    document.getElementById('f-batch').value = data.batch_no ?? '';
+
+  if (document.getElementById('f-desc'))
+    document.getElementById('f-desc').value = data.description ?? '';
+
+  if (document.getElementById('f-usage'))
+    document.getElementById('f-usage').value = data.usage_instructions ?? '';
+
+  if (document.getElementById('f-discount'))
+    document.getElementById('f-discount').value = data.discount ?? '';
+
+  if (document.getElementById('f-reorder'))
+    document.getElementById('f-reorder').value = data.reorder_level ?? '';
+
+  if (document.getElementById('f-unit'))
+    document.getElementById('f-unit').value = data.unit_type ?? '';
+
+  if (document.getElementById('f-pack'))
+    document.getElementById('f-pack').value = data.pack_size ?? '';
+
+  if (document.getElementById('f-mfgdate'))
+    document.getElementById('f-mfgdate').value = data.manufacture_date ?? '';
+
+  if (document.getElementById('f-expiry'))
+    document.getElementById('f-expiry').value = data.expiry_date ?? '';
+
+  if (document.getElementById('f-rx'))
+    document.getElementById('f-rx').checked = data.prescription_required == 1;
+
+  if (document.getElementById('f-controlled'))
+    document.getElementById('f-controlled').checked = data.controlled_substance == 1;
 }
 
 

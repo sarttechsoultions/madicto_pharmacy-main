@@ -188,13 +188,25 @@
                             <h4>#{{ $medicine->id }}</h4>
                         </td>
                         <td>
-                            <div class="med-thumb">
+                        <td>
 
-                                <img src="{{ asset($medicine->image) }}">
-                            </div>
+                            <a href="{{ route('medicine.show',$medicine->id) }}">
+
+                                <img src="{{ asset($medicine->image) }}"
+                                    width="70"
+                                    class="rounded">
+
+                            </a>
+
+                        </td>
                         </td>
                         <td>
-                            <h4>{{ $medicine->name }}</h4>
+                            <a href="{{ route('medicine.show',$medicine->id) }}"
+                                class="text-decoration-none fw-bold text-dark">
+
+                                {{ $medicine->name }}
+
+                            </a>
                         </td>
                         <td>{{ $medicine->category->name ?? 'N/A' }}</td>
                         <td>{{ $medicine->unit_type }}</td>
@@ -225,14 +237,7 @@
                             <div class="actions-cell">
                                 <button
                                     class="action-btn edit"
-                                    onclick='openEditModal(
-        @json($medicine->id),
-        @json($medicine->name),
-        @json($medicine->category_id),
-        @json($medicine->price),
-        @json($medicine->stock),
-        @json($medicine->quantity)
-    )'>
+                                    onclick='editMedicine(@json($medicine))'>
                                     <i class="fa-solid fa-pen"></i>
                                 </button>
 
@@ -264,8 +269,14 @@
 <!-- ══════════════════════════════════════════════
      ADD MEDICINE MODAL — full screen
 ═══════════════════════════════════════════════ -->
-<form action="{{ route('admin.medicine.store') }}" method="POST" enctype="multipart/form-data">
+<form id="medicineForm"
+    action="{{ route('admin.medicine.store') }}"
+    method="POST"
+    enctype="multipart/form-data">
     @csrf
+
+    <input type="hidden" id="formMethod" name="_method" value="POST">
+    <input type="hidden" id="medicine_id">
     <div class="modal-backdrop" id="addMedicineModal">
 
         <header class="m-topbar">
@@ -301,10 +312,10 @@
                 <div class="m-breadcrumb">
                     <a href="#" onclick="closeModal();return false;">Medicines</a>
                     <i class="fa-solid fa-chevron-right" style="font-size:.7rem;"></i>
-                    <span id="modalBreadcrumb">Add New Medicine</span>
+                    <span id="modalBreadcrumb">Add Medicine</span>
                 </div>
                 <div class="m-page-header">
-                    <h1 id="modalTitle">Inventory Entry</h1>
+                    <h1 id="modalTitle">Add Medicine</h1>
                     <p id="modalSubtitle">Register a new pharmaceutical product into the central management system.</p>
                 </div>
 
@@ -367,10 +378,6 @@
                                 <div class="mf-group">
                                     <label>Quantity *</label>
                                     <input type="number" id="f-quantity" name="quantity" placeholder="0" min="0" />
-                                </div>
-                                <div class="mf-group">
-                                    <label>Stock *</label>
-                                    <input type="number" id="f-stock" name="stock" placeholder="0" min="0" />
                                 </div>
                             </div>
                             <div class="mf-row three" style="margin-bottom:0;">
@@ -483,7 +490,7 @@
             </div>
             <div class="m-actions">
                 <button class="btn-primary" type="submit">
-                    <i class="fa-solid fa-paper-plane"></i> <span id="publishBtnText">Publish Medicine</span>
+                    <i class="fa-solid fa-paper-plane"></i> <span id="publishBtnText">Add Medicine</span>
                 </button>
             </div>
         </footer>
@@ -515,86 +522,6 @@
     </div>
 </div>
 
-<!-- ══════════════════════════════════════════════
-     EDIT MODAL
-═══════════════════════════════════════════════ -->
-<div class="edit-modal" id="editModal">
-
-    <form id="editForm" method="POST">
-        @csrf
-        @method('PUT')
-
-        <div class="edit-box">
-
-            <div class="edit-box-header">
-                <h3>
-                    <i class="fa-solid fa-pen"
-                        style="color:var(--primary);margin-right:8px;"></i>
-                    Edit Medicine
-                </h3>
-
-                <button type="button" class="icon-btn" onclick="closeEditModal()">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-
-            <div class="edit-box-body">
-
-                <div class="mf-row">
-                    <div class="mf-group">
-                        <label>Medicine Name</label>
-                        <input type="text" name="name" id="e-name" />
-                    </div>
-
-                    <div class="mf-group">
-                        <label>Category</label>
-
-                        <select name="category_id" id="e-cat">
-                            @foreach($category as $cat)
-                            <option value="{{ $cat->id }}">{{ $cat->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-
-                <div class="mf-row three">
-
-                    <div class="mf-group">
-                        <label>Price ($)</label>
-                        <input type="number" name="price" id="e-price" min="0" step="0.01" />
-                    </div>
-
-                    <div class="mf-group">
-                        <label>Stock Qty</label>
-                        <input type="number" name="stock" id="e-stock" min="0" />
-                    </div>
-
-                    <div class="mf-group">
-                        <label>Qty</label>
-                        <input type="number" name="quantity" id="e-qty" min="0" />
-                    </div>
-
-
-                </div>
-
-            </div>
-
-            <div class="edit-box-footer">
-                <button type="button" class="btn-draft" onclick="closeEditModal()">
-                    Cancel
-                </button>
-
-                <button type="submit" class="btn-primary">
-                    <i class="fa-solid fa-check"></i>
-                    Save Changes
-                </button>
-            </div>
-
-        </div>
-
-    </form>
-
-</div>
 
 <!-- ══════════════════════════════════════════════
      CONFIRM DELETE MODAL

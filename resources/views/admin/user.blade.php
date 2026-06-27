@@ -149,9 +149,26 @@
                     <tr data-created="{{ $users->created_at }}">
                         <td>
                             <div class="um-user">
-                                <div class="um-user-img">{{ substr($users->name, 0, 2) }}</div>
+                                <a href="{{ route('user.show',$users->id) }}">
+
+                                    <div class="um-user-img">
+
+                                        {{ strtoupper(substr($users->name,0,2)) }}
+
+                                    </div>
+
+                                </a>
                                 <div>
-                                    <h4>{{ $users->name }}</h4>
+                                    <h4>
+
+                                        <a href="{{ route('user.show',$users->id) }}"
+                                            class="text-decoration-none text-dark">
+
+                                            {{ $users->name }}
+
+                                        </a>
+
+                                    </h4>
                                     <p>{{ $users->email }}</p>
                                 </div>
                             </div>
