@@ -101,6 +101,7 @@
                         <th>Patient Name</th>
                         <th>Medicine</th>
                         <th>Status</th>
+                        <th>Created At</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -122,6 +123,11 @@
 
                                 @endif</span></td>
                         <td><span class="status-badge {{ $order->status === 'Shipped' ? 'status-shipped' : ($order->status === 'Pending' ? 'status-pending' : 'status-cancelled') }}">{{ $order->status ?? 'N/A' }}</span></td>
+                        <td>
+                            {{ $order->created_at->format('d M Y') }}
+                            <br>
+                            <small class="text-muted">{{ $order->created_at->format('h:i A') }}</small>
+                        </td>
                     </tr>
                     @endforeach
                 </tbody>
@@ -132,78 +138,78 @@
 
     <br>
 
-  <!-- ── RIGHT PANEL ── -->
-<div class="content">
-    <div class="equal-height-wrapper">
-        <!-- Low Stock Alerts -->
-        <div class="panel-card-right">
-            <div class="panel-title">
-                <span class="alert-icon">⚠️</span>
-                Low Stock Alerts
-            </div>
-            @forelse($lowstockmedicines as $medicine)
-            <div class="stock-item">
-                <div>
-                    <div class="stock-name">
-                        {{ $medicine->name }}
-                    </div>
-                    <div class="stock-qty">
-                        {{ $medicine->quantity }} units remaining
-                    </div>
+    <!-- ── RIGHT PANEL ── -->
+    <div class="content">
+        <div class="equal-height-wrapper">
+            <!-- Low Stock Alerts -->
+            <div class="panel-card-right">
+                <div class="panel-title">
+                    <span class="alert-icon">⚠️</span>
+                    Low Stock Alerts
                 </div>
-                <div class="stock-dot"></div>
-            </div>
-            @empty
-            <div class="stock-item">
-                <div>
-                    <div class="stock-name">
-                        No low stock medicines
+                @forelse($lowstockmedicines as $medicine)
+                <div class="stock-item">
+                    <div>
+                        <div class="stock-name">
+                            {{ $medicine->name }}
+                        </div>
+                        <div class="stock-qty">
+                            {{ $medicine->quantity }} units remaining
+                        </div>
                     </div>
-                    <div class="stock-qty">
-                        Inventory levels are good
-                    </div>
+                    <div class="stock-dot"></div>
                 </div>
-            </div>
-            @endforelse
-            <button class="btn-restock">
-                Restock All
-            </button>
-        </div>
-
-        <!-- Top Selling -->
-        <div class="panel-card-right">
-            <div class="panel-title">
-                Top Selling Medicines
-            </div>
-            @forelse($topSellingMedicines as $item)
-            <div class="med-item">
-                <div class="med-img">💊</div>
-                <div class="med-info">
-                    <div class="med-name">
-                        {{ $item->medicine_name }}
-                    </div>
-                    <div class="progress-bar-bg">
-                        <div class="progress-bar-fill"
-                            style="width:{{ round($item->percentage) }}%">
+                @empty
+                <div class="stock-item">
+                    <div>
+                        <div class="stock-name">
+                            No low stock medicines
+                        </div>
+                        <div class="stock-qty">
+                            Inventory levels are good
                         </div>
                     </div>
                 </div>
-                <div class="med-pct">
-                    {{ round($item->percentage) }}%
-                </div>
+                @endforelse
+                <button class="btn-restock">
+                    Restock All
+                </button>
             </div>
-            @empty
-            <div class="med-item">
-                <div class="med-info">
-                    <div class="med-name">
-                        No sales data found
+
+            <!-- Top Selling -->
+            <div class="panel-card-right">
+                <div class="panel-title">
+                    Top Selling Medicines
+                </div>
+                @forelse($topSellingMedicines as $item)
+                <div class="med-item">
+                    <div class="med-img">💊</div>
+                    <div class="med-info">
+                        <div class="med-name">
+                            {{ $item->medicine_name }}
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill"
+                                style="width:{{ round($item->percentage) }}%">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="med-pct">
+                        {{ round($item->percentage) }}%
                     </div>
                 </div>
+                @empty
+                <div class="med-item">
+                    <div class="med-info">
+                        <div class="med-name">
+                            No sales data found
+                        </div>
+                    </div>
+                </div>
+                @endforelse
             </div>
-            @endforelse
         </div>
-    </div>
-</div><!-- /content-left -->
+    </div><!-- /content-left -->
 </div><!-- /content -->
 </div><!-- /main -->
 

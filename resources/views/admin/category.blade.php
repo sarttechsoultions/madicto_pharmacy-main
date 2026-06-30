@@ -33,7 +33,7 @@
             <p>Organize your pharmacy inventory by therapeutic groups and drug types.</p>
         </div>
         <button class="btn-add" onclick="openCategoryModal()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style=" width: 20px; " >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style=" width: 20px; ">
                 <line x1="12" y1="5" x2="12" y2="19" />
                 <line x1="5" y1="12" x2="19" y2="12" />
             </svg>
@@ -76,7 +76,7 @@
                 <div class="cat-icon">
 
                     @if($category->icon)
-                    <img src="{{ asset( 'uploads/category/' . $category->icon) }}"
+                    <img src="{{ asset( $category->icon) }}"
                         alt="{{ $category->name }}"
                         style="width:40px;height:40px;object-fit:cover;border-radius:8px;">
                     @else
@@ -110,7 +110,10 @@
             <div class="cat-desc">{{ $category->description }}</div>
             <div class="cat-divider"></div>
             <div class="cat-footer">
-                <span class="med-count">256 Medicines</span>
+                <span class="med-count">
+                    {{ $category->medicines_count }}
+                    {{ Str::plural('Medicine', $category->medicines_count) }}
+                </span>
             </div>
         </div>
         @endforeach

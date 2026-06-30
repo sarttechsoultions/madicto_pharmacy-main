@@ -50,7 +50,7 @@
       <div class="od-tabs">
         <div class="od-tab od-active" data-status="All">All Orders</div>
         <div class="od-tab" data-status="Pending">Pending</div>
-        <div class="od-tab" data-status="Shipped">Shipped</div>
+        <div class="od-tab" data-status="Out Of Delivery">Out Of Delivery</div>
         <div class="od-tab" data-status="Delivered">Delivered</div>
         <div class="od-tab" data-status="Cancelled">Cancelled</div>
       </div>
@@ -58,7 +58,7 @@
       <select class="od-filter" id="statusFilter">
         <option value="Any">Status : Any</option>
         <option value="Pending">Pending</option>
-        <option value="Shipped">Shipped</option>
+        <option value="Out Of Delivery">Out Of Delivery</option>
         <option value="Delivered">Delivered</option>
         <option value="Cancelled">Cancelled</option>
       </select>
@@ -127,7 +127,7 @@
                   </option>
 
                 </select>
-
+                <i class="fa-solid fa-chevron-down edit-arrow"></i>
               </div>
             </td>
 
@@ -144,7 +144,7 @@
                   <option value="Pending" @selected($order->status=='Pending')>Pending</option>
                   <option value="Confirmed" @selected($order->status=='Confirmed')>Confirmed</option>
                   <option value="Processing" @selected($order->status=='Processing')>Processing</option>
-                  <option value="Shipped" @selected($order->status=='Shipped')>Shipped</option>
+                  <option value="Out Of Delivery" @selected($order->status=='Out Of Delivery')>Out Of Delivery</option>
                   <option value="Delivered" @selected($order->status=='Delivered')>Delivered</option>
                   <option value="Cancelled" @selected($order->status=='Cancelled')>Cancelled</option>
 
@@ -188,7 +188,11 @@
               </small>
             </td>
 
-            <td>{{ $order->created_at->format('M j, Y') }}</td>
+            <td>
+              {{ $order->created_at->format('d M Y') }}
+              <br>
+              <small class="text-muted">{{ $order->created_at->format('h:i A') }}</small>
+            </td>
             <td>
               <a href="{{ route('orders.invoice',$order->id) }}"
                 class="od-view-btn"

@@ -12,12 +12,19 @@ class CategoryController extends Controller
 {
     public function index()
     {
-        $categories = CategoryModel::orderByDesc('created_at')
+        $categories = CategoryModel::withCount('medicines')
+            ->orderByDesc('created_at')
             ->paginate(10);
+
         $categoriestotal = CategoryModel::count();
+
         $activemedicetotal = medicineModel::where('status', 'In Stock')->count();
 
-        return view('admin.category', compact('categories', 'categoriestotal', 'activemedicetotal'));
+        return view('admin.category', compact(
+            'categories',
+            'categoriestotal',
+            'activemedicetotal'
+        ));
     }
     public function store(Request $request)
     {

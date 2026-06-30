@@ -188,7 +188,6 @@
                             <h4>#{{ $medicine->id }}</h4>
                         </td>
                         <td>
-                        <td>
 
                             <a href="{{ route('medicine.show',$medicine->id) }}">
 
@@ -198,7 +197,6 @@
 
                             </a>
 
-                        </td>
                         </td>
                         <td>
                             <a href="{{ route('medicine.show',$medicine->id) }}"

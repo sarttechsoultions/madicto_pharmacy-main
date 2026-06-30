@@ -247,11 +247,11 @@ img {
 
 /* LOGO */
 .header-logo .logo-image {
-    height: 55px;
-    width: auto;
-    padding: 5px;
-    object-fit: contain;
-    transition: height 0.35s ease;
+  height: 55px;
+  width: auto;
+  padding: 5px;
+  object-fit: contain;
+  transition: height 0.35s ease;
 }
 
 .header.scrolled .logo-image {
@@ -4514,18 +4514,19 @@ body {
 
 
 
-    .hero-section {
-        min-height: auto;
-        height: auto;
-    } 
+.hero-section {
+  min-height: auto;
+  height: auto;
+}
+
 .hero-image-area {
-        order: 2;
-    }
- 
-    .hero-content {
-        order: 1;
-    }
- 
+  order: 2;
+}
+
+.hero-content {
+  order: 1;
+}
+
 
 .old-price {
   text-decoration: line-through;
@@ -4550,9 +4551,9 @@ body {
 }
 
 
-.hero-section{
-    min-height: calc(100vh - 80px);
-    display: flex;
-    align-items: center;
-    padding: 60px 0;
+.hero-section {
+  min-height: calc(100vh - 80px);
+  display: flex;
+  align-items: center;
+  padding: 60px 0;
 }

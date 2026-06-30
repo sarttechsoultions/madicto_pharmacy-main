@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('notifications', function (Blueprint $table) {
+        Schema::create('noties', function (Blueprint $table) {
 
             $table->id();
 
@@ -19,7 +19,24 @@ return new class extends Migration
 
             $table->text('message');
 
+            $table->string('type')->default('General');
+
             $table->string('image')->nullable();
+
+            $table->string('send_to')->default('All Users');
+
+            $table->enum('status', [
+                'Pending',
+                'Sent',
+                'Failed',
+                'Partial Success'
+            ])->default('Pending');
+
+            $table->integer('total_users')->default(0);
+
+            $table->integer('success_count')->default(0);
+
+            $table->integer('failed_count')->default(0);
 
             $table->timestamps();
         });

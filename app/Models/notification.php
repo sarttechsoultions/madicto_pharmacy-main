@@ -6,11 +6,28 @@ use Illuminate\Database\Eloquent\Model;
 
 class notification extends Model
 {
-    protected $table = 'notifications';
+
+    protected $table = 'noties';
 
     protected $fillable = [
+
         'title',
+
         'message',
-        'image'
+
+        'type',
+
+        'image',
+
+        'send_to',
+
+        'status',
+
+        'total_users',
+
+        'success_count',
+
+        'failed_count',
+
     ];
 }

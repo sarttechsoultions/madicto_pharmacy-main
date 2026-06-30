@@ -373,10 +373,86 @@ class MedicineController extends Controller
 
     public function downloadSample()
     {
-        return Excel::download(
-            new MedicineSampleExport,
-            'medicine_sample.xlsx'
-        );
+        $fileName = 'medicine_sample_' . date('Ymd_His') . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename=$fileName",
+        ];
+
+        $callback = function () {
+            $file = fopen('php://output', 'w');
+
+            // Header Row
+            fputcsv($file, [
+                'name',
+                'category_id',
+                'batch_no',
+                'usage_instructions',
+                'discount',
+                'quantity',
+                'stock',
+                'manufacturer',
+                'reorder_level',
+                'description',
+                'price',
+                'unit_type',
+                'pack_size',
+                'status',
+                'manufacture_date',
+                'expiry_date',
+                'image',
+                'medicine_images'
+            ]);
+
+            // Sample Row 1
+            fputcsv($file, [
+                'Paracetamol',
+                1,
+                'B123',
+                'After meal',
+                10,
+                100,
+                500,
+                'ABC Pharma',
+                20,
+                'Fever medicine',
+                50,
+                'Tablet',
+                '10 Tablets',
+                'In Stock',
+                '2026-01-01',
+                '2028-01-01',
+                'paracetamol.jpg',
+                'g1.jpg,g2.jpg'
+            ]);
+
+            // Sample Row 2
+            fputcsv($file, [
+                'Dolo 650',
+                2,
+                'B124',
+                'Twice Daily',
+                5,
+                80,
+                300,
+                'Micro Labs',
+                15,
+                'Pain Relief',
+                35,
+                'Tablet',
+                '15 Tablets',
+                'Low Stock',
+                '2026-02-01',
+                '2028-02-01',
+                'dolo650.jpg',
+                'd1.jpg,d2.jpg'
+            ]);
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 
     public function show($id)

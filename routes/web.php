@@ -104,8 +104,20 @@ Route::middleware('auth:sanctum')->group(function () {
         [UserController::class, 'saveFcmToken']
     );
 
-    Route::post('/notifications/send', [NotificationController::class, 'sendNotification'])->name('admin.notification.send');
-    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications');
+    Route::get('/notification', [NotificationController::class, 'index'])
+        ->name('notifications');
+
+    Route::post('/notification/send', [NotificationController::class, 'send'])
+        ->name('admin.notification.send');
+
+    Route::get('/notification/{id}', [NotificationController::class, 'show'])
+        ->name('admin.notification.show');
+
+    Route::delete('/notification/{id}', [NotificationController::class, 'destroy'])
+        ->name('admin.notification.delete');
+
+    Route::post('/notification/{id}/resend', [NotificationController::class, 'resend'])
+        ->name('admin.notification.resend');
 
 
     Route::get('/medicine/{id}/details', [MedicineController::class, 'show'])

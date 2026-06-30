@@ -449,7 +449,6 @@ function editMedicine(data) {
   document.getElementById('f-name').value = data.name ?? '';
   document.getElementById('f-cat').value = data.category_id ?? '';
   document.getElementById('f-price').value = data.price ?? '';
-  document.getElementById('f-stock').value = data.stock ?? '';
   document.getElementById('f-quantity').value = data.quantity ?? '';
 
   if (document.getElementById('f-mfg'))
