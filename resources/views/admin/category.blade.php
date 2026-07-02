@@ -328,7 +328,7 @@
         document.getElementById('editForm').action = `/categories/${category.id}`;
 
         if (category.icon) {
-            document.getElementById('edit_iconPreview').src = `/uploads/category/${category.icon}`;
+            document.getElementById('edit_iconPreview').src = `${category.icon}`;
         }
     }
 

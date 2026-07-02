@@ -17,7 +17,7 @@
             </p>
         </div>
 
-        <button class="notification-send-btn" id="openNotificationModal">
+        <button class="nf-btn nf-btn-danger" id="openNotificationModal">
             <i class="fa fa-paper-plane"></i>
             Send Notification
         </button>
@@ -108,7 +108,7 @@
     <div class="nf-card mt-4">
         <div class="nf-card-header">
             <h5>Notification History</h5>
-            <span class="nf-badge bg-primary">{{ $notifications->count() }} Notifications</span>
+            <span class="nf-badge bg-danger">{{ $notifications->count() }} Notifications</span>
         </div>
 
         <div class="nf-table-wrap">
@@ -179,7 +179,12 @@
                             <div class="nf-actions">
                                 <button class="nf-icon-btn view" title="View"><i class="fa fa-eye"></i></button>
                                 <button class="nf-icon-btn resend" title="Resend"><i class="fa fa-paper-plane"></i></button>
-                                <button class="nf-icon-btn delete deleteNotification" data-url="#" title="Delete"><i class="fa fa-trash"></i></button>
+                                <button
+                                    class="nf-icon-btn delete deleteNotification"
+                                    data-url="{{ route('admin.notification.delete', $notification->id) }}"
+                                    title="Delete">
+                                    <i class="fa fa-trash"></i>
+                                </button>
                             </div>
                         </td>
 
@@ -188,7 +193,6 @@
                     <tr>
                         <td colspan="7">
                             <div class="nf-empty">
-                                <img src="{{ asset('images/empty-notification.svg') }}" width="170">
                                 <h5>No Notifications Found</h5>
                                 <p class="text-muted">Notifications you send will appear here.</p>
                             </div>
@@ -253,7 +257,7 @@
 
                 <div class="modal-footer">
                     <button type="button" class="nf-btn nf-btn-light" id="closeNotificationModal2">Cancel</button>
-                    <button type="submit" class="nf-btn nf-btn-primary">Send Notification</button>
+                    <button type="submit" class="nf-btn nf-btn-danger">Send Notification</button>
                 </div>
 
             </form>
@@ -354,252 +358,266 @@
     <!-- Delete Modal -->
     <div class="nf-modal" id="deleteNotificationModal">
         <div class="nf-modal-box nf-modal-sm">
+            <form method="POST" id="deleteNotificationForm" action="">
+                @csrf
+                @method('DELETE')
+                <div class="nf-delete-body">
+                    <i class="fa fa-trash"></i>
+                    <h3>Delete Notification?</h3>
+                    <p class="text-muted">This action cannot be undone.</p>
 
-            <div class="nf-delete-body">
-                <i class="fa fa-trash"></i>
-                <h3>Delete Notification?</h3>
-                <p class="text-muted">This action cannot be undone.</p>
-
-                <form method="POST">
-                    @csrf
-                    @method('DELETE')
                     <div class="nf-delete-actions">
-                        <button class="nf-btn nf-btn-danger">Delete</button>
-                        <button type="button" class="nf-btn nf-btn-light" data-close="deleteNotificationModal">Cancel</button>
-                    </div>
-                </form>
-            </div>
+                        <button class="nf-btn nf-btn-danger" type="submit">
+                            Delete
+                        </button>
 
+                        <button
+                            type="button"
+                            class="nf-btn nf-btn-light"
+                            data-close="deleteNotificationModal">
+                            Cancel
+                        </button>
+                    </div>
+            </form>
         </div>
     </div>
+</div>
 
-    <script>
-        /*=====================================
+<script>
+    /*=====================================
         Notification Dashboard JS (No Bootstrap)
         ======================================*/
 
-        const modal = document.getElementById("sendNotificationModal");
-        const openBtn = document.getElementById("openNotificationModal");
-        const closeBtn = document.getElementById("closeNotificationModal");
-        const closeBtn2 = document.getElementById("closeNotificationModal2");
+    const modal = document.getElementById("sendNotificationModal");
+    const openBtn = document.getElementById("openNotificationModal");
+    const closeBtn = document.getElementById("closeNotificationModal");
+    const closeBtn2 = document.getElementById("closeNotificationModal2");
 
-        function openSendModal() {
-            modal.classList.add("show");
-            document.body.style.overflow = "hidden";
-        }
+    function openSendModal() {
+        modal.classList.add("show");
+        document.body.style.overflow = "hidden";
+    }
 
-        function closeSendModal() {
-            modal.classList.remove("show");
+    function closeSendModal() {
+        modal.classList.remove("show");
+        document.body.style.overflow = "auto";
+    }
+
+    if (openBtn) openBtn.onclick = openSendModal;
+    if (closeBtn) closeBtn.onclick = closeSendModal;
+    if (closeBtn2) closeBtn2.onclick = closeSendModal;
+
+    window.addEventListener("click", function(e) {
+        if (e.target === modal) closeSendModal();
+    });
+
+    document.addEventListener("keydown", function(e) {
+        if (e.key === "Escape") {
+            closeSendModal();
+            document.querySelectorAll(".nf-modal.show").forEach(function(m) {
+                m.classList.remove("show");
+            });
             document.body.style.overflow = "auto";
         }
+    });
 
-        if (openBtn) openBtn.onclick = openSendModal;
-        if (closeBtn) closeBtn.onclick = closeSendModal;
-        if (closeBtn2) closeBtn2.onclick = closeSendModal;
+    /*=====================================
+        Generic Modal Open/Close (View / Delete)
+    ======================================*/
 
-        window.addEventListener("click", function(e) {
-            if (e.target === modal) closeSendModal();
+    function openNfModal(id) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.classList.add("show");
+            document.body.style.overflow = "hidden";
+        }
+    }
+
+    function closeNfModal(id) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.classList.remove("show");
+            document.body.style.overflow = "auto";
+        }
+    }
+
+    document.querySelectorAll("[data-close]").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+            closeNfModal(this.dataset.close);
         });
+    });
 
-        document.addEventListener("keydown", function(e) {
-            if (e.key === "Escape") {
-                closeSendModal();
-                document.querySelectorAll(".nf-modal.show").forEach(function(m) {
-                    m.classList.remove("show");
-                });
+    document.querySelectorAll(".nf-modal").forEach(function(m) {
+        m.addEventListener("click", function(e) {
+            if (e.target === m) {
+                m.classList.remove("show");
                 document.body.style.overflow = "auto";
             }
         });
+    });
 
-        /*=====================================
-            Generic Modal Open/Close (View / Delete)
-        ======================================*/
-
-        function openNfModal(id) {
-            const el = document.getElementById(id);
-            if (el) {
-                el.classList.add("show");
-                document.body.style.overflow = "hidden";
-            }
-        }
-
-        function closeNfModal(id) {
-            const el = document.getElementById(id);
-            if (el) {
-                el.classList.remove("show");
-                document.body.style.overflow = "auto";
-            }
-        }
-
-        document.querySelectorAll("[data-close]").forEach(function(btn) {
-            btn.addEventListener("click", function() {
-                closeNfModal(this.dataset.close);
-            });
+    // Hook up "View" buttons in the table to open the view modal
+    document.querySelectorAll(".nf-icon-btn.view").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+            openNfModal("viewNotificationModal");
         });
+    });
 
-        document.querySelectorAll(".nf-modal").forEach(function(m) {
-            m.addEventListener("click", function(e) {
-                if (e.target === m) {
-                    m.classList.remove("show");
-                    document.body.style.overflow = "auto";
+    /*=====================================
+        Live Preview
+    ======================================*/
+
+    const titleInput = document.querySelector("input[name='title']");
+    const messageInput = document.querySelector("textarea[name='message']");
+
+    const previewTitle = document.getElementById("previewTitle");
+    const previewMessage = document.getElementById("previewMessage");
+
+    if (titleInput) {
+        titleInput.addEventListener("keyup", function() {
+            previewTitle.innerHTML = this.value || "Notification Title";
+        });
+    }
+
+    if (messageInput) {
+        messageInput.addEventListener("keyup", function() {
+            previewMessage.innerHTML = this.value || "Write your notification message...";
+        });
+    }
+
+    /*=====================================
+        Image Preview
+    ======================================*/
+
+    const imageInput = document.getElementById("notificationImage");
+    const previewImage = document.getElementById("previewImage");
+
+    if (imageInput) {
+        imageInput.onchange = function(e) {
+            const file = e.target.files[0];
+            if (file && previewImage) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    previewImage.src = event.target.result;
+                    previewImage.style.display = "block";
                 }
-            });
-        });
-
-        // Hook up "View" buttons in the table to open the view modal
-        document.querySelectorAll(".nf-icon-btn.view").forEach(function(btn) {
-            btn.addEventListener("click", function() {
-                openNfModal("viewNotificationModal");
-            });
-        });
-
-        /*=====================================
-            Live Preview
-        ======================================*/
-
-        const titleInput = document.querySelector("input[name='title']");
-        const messageInput = document.querySelector("textarea[name='message']");
-
-        const previewTitle = document.getElementById("previewTitle");
-        const previewMessage = document.getElementById("previewMessage");
-
-        if (titleInput) {
-            titleInput.addEventListener("keyup", function() {
-                previewTitle.innerHTML = this.value || "Notification Title";
-            });
-        }
-
-        if (messageInput) {
-            messageInput.addEventListener("keyup", function() {
-                previewMessage.innerHTML = this.value || "Write your notification message...";
-            });
-        }
-
-        /*=====================================
-            Image Preview
-        ======================================*/
-
-        const imageInput = document.getElementById("notificationImage");
-        const previewImage = document.getElementById("previewImage");
-
-        if (imageInput) {
-            imageInput.onchange = function(e) {
-                const file = e.target.files[0];
-                if (file && previewImage) {
-                    const reader = new FileReader();
-                    reader.onload = function(event) {
-                        previewImage.src = event.target.result;
-                        previewImage.style.display = "block";
-                    }
-                    reader.readAsDataURL(file);
-                }
+                reader.readAsDataURL(file);
             }
         }
+    }
 
-        /*=====================================
-            Search Notification
-        ======================================*/
+    /*=====================================
+        Search Notification
+    ======================================*/
 
-        const search = document.getElementById("notificationSearch");
+    const search = document.getElementById("notificationSearch");
 
-        if (search) {
-            search.addEventListener("keyup", function() {
-                let filter = this.value.toLowerCase();
-                let rows = document.querySelectorAll(".notification-row");
+    if (search) {
+        search.addEventListener("keyup", function() {
+            let filter = this.value.toLowerCase();
+            let rows = document.querySelectorAll(".notification-row");
 
-                rows.forEach(function(row) {
-                    let text = row.innerText.toLowerCase();
-                    row.style.display = text.includes(filter) ? "" : "none";
-                });
-            });
-        }
-
-        /*=====================================
-            Filter Status
-        ======================================*/
-
-        const filter = document.getElementById("notificationFilter");
-
-        if (filter) {
-            filter.addEventListener("change", function() {
-                let value = this.value.toLowerCase();
-                let rows = document.querySelectorAll(".notification-row");
-
-                rows.forEach(function(row) {
-                    if (value === "all") {
-                        row.style.display = "";
-                        return;
-                    }
-                    let status = row.dataset.status.toLowerCase();
-                    row.style.display = status === value ? "" : "none";
-                });
-            });
-        }
-
-        /*=====================================
-            Quick Filter Tags (active state)
-        ======================================*/
-
-        document.querySelectorAll(".tag").forEach(function(tag) {
-            tag.addEventListener("click", function() {
-                document.querySelectorAll(".tag").forEach(t => t.classList.remove("active"));
-                this.classList.add("active");
+            rows.forEach(function(row) {
+                let text = row.innerText.toLowerCase();
+                row.style.display = text.includes(filter) ? "" : "none";
             });
         });
+    }
 
-        /*=====================================
-            Delete Confirm
-        ======================================*/
+    /*=====================================
+        Filter Status
+    ======================================*/
 
-        document.querySelectorAll(".deleteNotification").forEach(function(btn) {
-            btn.addEventListener("click", function() {
-                openNfModal("deleteNotificationModal");
+    const filter = document.getElementById("notificationFilter");
+
+    if (filter) {
+        filter.addEventListener("change", function() {
+            let value = this.value.toLowerCase();
+            let rows = document.querySelectorAll(".notification-row");
+
+            rows.forEach(function(row) {
+                if (value === "all") {
+                    row.style.display = "";
+                    return;
+                }
+                let status = row.dataset.status.toLowerCase();
+                row.style.display = status === value ? "" : "none";
             });
         });
+    }
 
-        /*=====================================
-            Toast Message
-        ======================================*/
+    /*=====================================
+        Quick Filter Tags (active state)
+    ======================================*/
 
-        function showToast(message, color = "#2563eb") {
-            const toast = document.createElement("div");
-            toast.innerHTML = message;
-            toast.style.position = "fixed";
-            toast.style.top = "30px";
-            toast.style.right = "30px";
-            toast.style.background = color;
-            toast.style.color = "#fff";
-            toast.style.padding = "15px 25px";
-            toast.style.borderRadius = "10px";
-            toast.style.boxShadow = "0 10px 30px rgba(0,0,0,.25)";
-            toast.style.zIndex = "999999";
+    document.querySelectorAll(".tag").forEach(function(tag) {
+        tag.addEventListener("click", function() {
+            document.querySelectorAll(".tag").forEach(t => t.classList.remove("active"));
+            this.classList.add("active");
+        });
+    });
+
+    /*=====================================
+        Delete Confirm
+    ======================================*/
+
+    document.querySelectorAll(".deleteNotification").forEach(function(btn) {
+
+        btn.addEventListener("click", function() {
+
+            let url = this.dataset.url;
+
+            document.getElementById("deleteNotificationForm").action = url;
+
+            openNfModal("deleteNotificationModal");
+
+        });
+
+    });
+
+    /*=====================================
+        Toast Message
+    ======================================*/
+
+    function showToast(message, color = "#2563eb") {
+        const toast = document.createElement("div");
+        toast.innerHTML = message;
+        toast.style.position = "fixed";
+        toast.style.top = "30px";
+        toast.style.right = "30px";
+        toast.style.background = color;
+        toast.style.color = "#fff";
+        toast.style.padding = "15px 25px";
+        toast.style.borderRadius = "10px";
+        toast.style.boxShadow = "0 10px 30px rgba(0,0,0,.25)";
+        toast.style.zIndex = "999999";
+        toast.style.opacity = "0";
+        toast.style.transition = ".3s";
+
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            toast.style.opacity = "1";
+        }, 100);
+
+        setTimeout(() => {
             toast.style.opacity = "0";
-            toast.style.transition = ".3s";
-
-            document.body.appendChild(toast);
-
             setTimeout(() => {
-                toast.style.opacity = "1";
-            }, 100);
+                toast.remove();
+            }, 300);
+        }, 3000);
+    }
 
-            setTimeout(() => {
-                toast.style.opacity = "0";
-                setTimeout(() => {
-                    toast.remove();
-                }, 300);
-            }, 3000);
-        }
+    /*=====================================
+        Auto Success / Error Message
+    ======================================*/
 
-        /*=====================================
-            Auto Success / Error Message
-        ======================================*/
+    const success = document.getElementById("successMessage");
+    if (success) showToast(success.innerHTML, "#16a34a");
 
-        const success = document.getElementById("successMessage");
-        if (success) showToast(success.innerHTML, "#16a34a");
-
-        const error = document.getElementById("errorMessage");
-        if (error) showToast(error.innerHTML, "#dc2626");
-    </script>
+    const error = document.getElementById("errorMessage");
+    if (error) showToast(error.innerHTML, "#dc2626");
+</script>
 
 </div>
 
