@@ -400,7 +400,7 @@ class api extends Controller
                     if ($medicine->quantity < $item->quantity) {
                         return response()->json([
                             'status' => false,
-                            'message' => $medicine->name . ' stock not available'
+                            'message' => $medicine->name . ' quantity not available'
                         ], 422);
                     }
 
@@ -1155,10 +1155,24 @@ class api extends Controller
 
         try {
 
-            $order = OrdersModel::find($request->order_id);
+            $order = OrdersModel::with('items')->findOrFail($request->order_id);
 
-            // Delete order items first
-            OrderItemModel::where('order_id', $order->id)->delete();
+            // Optional: Delivered order cancel na ho
+            if ($order->status == 'Delivered') {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Delivered order cannot be cancelled.'
+                ], 400);
+            }
+
+            // Restore medicine stock
+            foreach ($order->items as $item) {
+                MedicineModel::where('id', $item->medicine_id)
+                    ->increment('quantity', $item->quantity);
+            }
+
+            // Delete order items
+            $order->items()->delete();
 
             // Delete order
             $order->delete();
@@ -1167,7 +1181,7 @@ class api extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Order cancelled successfully'
+                'message' => 'Order cancelled successfully.'
             ]);
         } catch (\Exception $e) {
 

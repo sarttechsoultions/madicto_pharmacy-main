@@ -433,15 +433,15 @@
                                     name="medicine_image[]"
                                     accept="image/*"
                                     multiple
-                                    onchange="previewImages(event)"
-                                    hidden>
+                                    hidden
+                                    onchange="previewGallery(event)">
 
                                 <i class="fa-solid fa-cloud-arrow-up"></i>
                                 <strong>Click to upload gallery images</strong>
                                 <span>PNG, JPG up to 10MB</span>
                             </div>
 
-                            <div class="media-thumbs" id="previewContainer"></div>
+                            <div id="previewContainer" class="media-thumbs"></div>
                         </div>
 
                         <div class="m-section">

@@ -351,14 +351,75 @@ function publishMedicine() {
   showToast(`✅ ${data.name} published to inventory!`);
 }
 
-function previewImage(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const url = URL.createObjectURL(file);
-  const t1 = document.getElementById('thumb1');
-  const t2 = document.getElementById('thumb2');
-  if (!t1.innerHTML) { t1.innerHTML = `<img src="${url}" alt="preview"/>`; }
-  else { t2.innerHTML = `<img src="${url}" alt="preview"/>`; }
+let galleryFiles = [];
+
+function previewGallery(event) {
+
+  const files = Array.from(event.target.files);
+
+  files.forEach(file => {
+
+    galleryFiles.push(file);
+
+  });
+
+  renderGallery();
+
+  event.target.value = "";
+}
+
+function renderGallery() {
+
+  const container = document.getElementById("previewContainer");
+
+  container.innerHTML = "";
+
+  galleryFiles.forEach((file, index) => {
+
+    const reader = new FileReader();
+
+    reader.onload = function (e) {
+
+      container.innerHTML += `
+                <div class="gallery-box">
+                    <img src="${e.target.result}">
+                    <button type="button"
+                        class="remove-gallery"
+                        onclick="removeGalleryImage(${index})">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            `;
+
+    }
+
+    reader.readAsDataURL(file);
+
+  });
+
+  syncGalleryInput();
+}
+
+function removeGalleryImage(index) {
+
+  galleryFiles.splice(index, 1);
+
+  renderGallery();
+
+}
+
+function syncGalleryInput() {
+
+  let dt = new DataTransfer();
+
+  galleryFiles.forEach(file => {
+
+    dt.items.add(file);
+
+  });
+
+  document.getElementById("galleryInput").files = dt.files;
+
 }
 
 /* ══════════════════════

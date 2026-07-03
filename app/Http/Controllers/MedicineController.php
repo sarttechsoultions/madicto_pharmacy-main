@@ -391,14 +391,12 @@ class MedicineController extends Controller
                 'usage_instructions',
                 'discount',
                 'quantity',
-                'stock',
                 'manufacturer',
                 'reorder_level',
                 'description',
                 'price',
                 'unit_type',
                 'pack_size',
-                'status',
                 'manufacture_date',
                 'expiry_date',
                 'image',
@@ -413,18 +411,16 @@ class MedicineController extends Controller
                 'After meal',
                 10,
                 100,
-                500,
                 'ABC Pharma',
                 20,
                 'Fever medicine',
                 50,
                 'Tablet',
                 '10 Tablets',
-                'In Stock',
                 '2026-01-01',
                 '2028-01-01',
                 'paracetamol.jpg',
-                'g1.jpg,g2.jpg'
+                '"[\"uploads\\\/medicine\\\/gallery\\\/1781677113_6a323c39bfde3.webp\"]"'
             ]);
 
             // Sample Row 2
@@ -435,18 +431,16 @@ class MedicineController extends Controller
                 'Twice Daily',
                 5,
                 80,
-                300,
                 'Micro Labs',
                 15,
                 'Pain Relief',
                 35,
                 'Tablet',
                 '15 Tablets',
-                'Low Stock',
                 '2026-02-01',
                 '2028-02-01',
                 'dolo650.jpg',
-                'd1.jpg,d2.jpg'
+                '"[\"uploads\\\/medicine\\\/gallery\\\/1781677113_6a323c39bfde3.webp\"]"'
             ]);
 
             fclose($file);

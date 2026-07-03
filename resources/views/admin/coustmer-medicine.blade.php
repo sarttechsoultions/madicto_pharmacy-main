@@ -194,7 +194,7 @@
                     <td>
                         <div class="med-thumb">
                             <img
-                                src="{{ asset('uploads/cstmedicine/' . $cart->img) }}"
+                                src="{{ asset($cart->img) }}"
                                 alt="Medicine Image"
                                 style="cursor:pointer"
                                 onclick="openImage(this.src)">

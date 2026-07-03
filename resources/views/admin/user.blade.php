@@ -152,9 +152,8 @@
                                 <a href="{{ route('user.show',$users->id) }}">
 
                                     <div class="um-user-img">
-
-                                        {{ strtoupper(substr($users->name,0,2)) }}
-
+                                        <img src="{{ $users->profile_img ?? asset('uploads/profile/default-avtar.png') }}"
+                                            alt="{{ $users->name }}">
                                     </div>
 
                                 </a>
