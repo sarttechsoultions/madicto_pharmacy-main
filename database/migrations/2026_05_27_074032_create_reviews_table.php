@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('coustmer_id')
-                ->constrained()
+                ->constrained('users')
                 ->onDelete('cascade');
 
             $table->foreignId('medicine_id')

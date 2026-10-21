@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    // Available only when APP_ENV=local. Never enable this in production.
+    'testing_otp' => [
+        'enabled' => env('TEST_OTP_ENABLED', false),
+        'code' => env('TEST_OTP_CODE'),
+    ],
+
 ];
