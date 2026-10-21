@@ -22,10 +22,10 @@ class auth extends Controller
             'referral_code' => ['nullable']
         ]);
 
-        // User check
+        // User check (Only active users; deleted accounts have anonymized emails)
         $user = User::where('email', $request->email)->first();
 
-        // Agar user nahi hai to register karo
+        // Agar user nahi hai to register karo (Nayi ID banegi)
         if (!$user) {
 
             $user = User::create([

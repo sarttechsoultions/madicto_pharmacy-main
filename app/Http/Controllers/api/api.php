@@ -1258,9 +1258,11 @@ class api extends Controller
         $user = $request->user();
 
         // FCM token remove
-        $user->update([
-            'fcm_token' => null
-        ]);
+        if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'fcm_token')) {
+            $user->update([
+                'fcm_token' => null
+            ]);
+        }
 
         // Current token delete
         $user->currentAccessToken()->delete();
@@ -1269,5 +1271,41 @@ class api extends Controller
             'status' => true,
             'message' => 'Logged out successfully'
         ]);
+    }
+
+    public function deleteAccount(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'status' => false,
+                'message' => 'User not found'
+            ], 404);
+        }
+
+        // Revoke all tokens
+        $user->tokens()->delete();
+
+        // Anonymize email and referral code so the same email can register as a brand new account
+        $timestamp = time();
+        $user->email = 'deleted_' . $timestamp . '_' . $user->email;
+        if ($user->referral_code) {
+            $user->referral_code = 'del_' . $timestamp . '_' . $user->referral_code;
+        }
+
+        if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'fcm_token')) {
+            $user->fcm_token = null;
+        }
+
+        $user->save();
+
+        // Soft delete the user
+        $user->delete();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Account deleted successfully'
+        ], 200);
     }
 }

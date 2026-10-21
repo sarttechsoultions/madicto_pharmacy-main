@@ -55,6 +55,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/referral', [api::class, 'shareReferral']);
     Route::post('/apply-referral', [api::class, 'applyReferralCode']);
     Route::post('/logout', [api::class, 'logout']);
+    Route::delete('/delete-account', [api::class, 'deleteAccount']);
+    Route::post('/delete-account', [api::class, 'deleteAccount']);
 
     Route::get('/cart', [api::class, 'carts']);
 
