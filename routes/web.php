@@ -11,6 +11,9 @@ use App\Http\Controllers\OrdersController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\LabController;
+use App\Http\Controllers\LabTestController;
+use App\Http\Controllers\LabTestCategoryController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -125,5 +128,34 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/users/{id}', [UserController::class, 'show'])
         ->name('user.show');
+
+    // Lab Management Routes
+    // Dashboard
+    Route::get('/lab/dashboard', [LabController::class, 'dashboard'])->name('admin.lab.dashboard');
+
+    // Lab Setup
+    Route::get('/lab/setup', [LabController::class, 'index'])->name('admin.lab.setup');
+    Route::post('/lab/setup/store', [LabController::class, 'store'])->name('admin.lab.store');
+    Route::put('/lab/setup/{id}', [LabController::class, 'update'])->name('admin.lab.update');
+    Route::delete('/lab/setup/{id}', [LabController::class, 'destroy'])->name('admin.lab.destroy');
+    Route::post('/lab/setup/{id}/toggle-status', [LabController::class, 'toggleStatus'])->name('admin.lab.toggleStatus');
+
+    // Manage Lab Tests
+    Route::get('/lab/tests', [LabTestController::class, 'index'])->name('admin.lab.tests');
+    Route::post('/lab/tests/store', [LabTestController::class, 'store'])->name('admin.lab.tests.store');
+    Route::put('/lab/tests/{id}', [LabTestController::class, 'update'])->name('admin.lab.tests.update');
+    Route::delete('/lab/tests/{id}', [LabTestController::class, 'destroy'])->name('admin.lab.tests.destroy');
+    Route::post('/lab/tests/{id}/toggle-status', [LabTestController::class, 'toggleStatus'])->name('admin.lab.tests.toggleStatus');
+    Route::post('/lab/tests/{id}/pricing', [LabTestController::class, 'updatePricing'])->name('admin.lab.tests.pricing');
+
+    // Lab Test Categories
+    Route::get('/lab/categories', [LabTestCategoryController::class, 'index'])->name('admin.lab.categories');
+    Route::post('/lab/categories/store', [LabTestCategoryController::class, 'store'])->name('admin.lab.categories.store');
+    Route::put('/lab/categories/{id}', [LabTestCategoryController::class, 'update'])->name('admin.lab.categories.update');
+    Route::delete('/lab/categories/{id}', [LabTestCategoryController::class, 'destroy'])->name('admin.lab.categories.destroy');
+    Route::post('/lab/categories/{id}/toggle-status', [LabTestCategoryController::class, 'toggleStatus'])->name('admin.lab.categories.toggleStatus');
+
+    // Lab Test Orders (Prepared for future use)
+    Route::get('/lab/orders', [LabController::class, 'orders'])->name('admin.lab.orders');
 });
 require __DIR__ . '/auth.php';

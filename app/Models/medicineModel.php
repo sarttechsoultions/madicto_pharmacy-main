@@ -26,10 +26,8 @@ class medicineModel extends Model
         'manufacture_date',
         'expiry_date',
         'image',
-        'medicine_image'
-    ];
-    protected $casts = [
-        'medicine_image' => 'array',
+        'medicine_image',
+        'dod',
     ];
 
     public function category()
@@ -41,8 +39,30 @@ class medicineModel extends Model
     {
         return $this->hasMany(OrdersModel::class, 'medicine_id');
     }
+
     public function reviews()
     {
         return $this->hasMany(ReviewModel::class, 'medicine_id', 'id');
+    }
+
+    /**
+     * Safely access gallery images as an array.
+     */
+    public function getGalleryImagesAttribute(): array
+    {
+        if (is_array($this->medicine_image)) {
+            return $this->medicine_image;
+        }
+
+        if (empty($this->medicine_image)) {
+            return [];
+        }
+
+        $decoded = json_decode($this->medicine_image, true);
+        if (is_array($decoded)) {
+            return $decoded;
+        }
+
+        return [$this->medicine_image];
     }
 }

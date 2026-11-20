@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\api\api;
 use App\Http\Controllers\api\auth;
+use App\Http\Controllers\Api\LabApiController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Models\User;
@@ -28,6 +29,14 @@ Route::get('/reviews/{medicine_id}', [api::class, 'index']);
 Route::get('/trending-medicine', [api::class, 'trendingProducts']);
 Route::get('/deals-of-day', [api::class, 'dealsOfDay']);
 Route::get('/category-is-available', [api::class, 'categoryIsAvailable']);
+
+// Public Mobile APIs for Lab Test Management
+Route::get('/labs', [LabApiController::class, 'getLabs']);
+Route::get('/lab-test-categories', [LabApiController::class, 'getCategories']);
+Route::get('/lab-tests', [LabApiController::class, 'getTests']);
+Route::get('/labs/{id}/tests', [LabApiController::class, 'getTestsByLab']);
+Route::get('/lab-tests/{id}', [LabApiController::class, 'getTestDetails']);
+Route::get('/lab-tests/{id}/price', [LabApiController::class, 'getTestPrice']);
 
 Route::middleware('auth:sanctum')->group(function () {
 

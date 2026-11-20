@@ -10,6 +10,7 @@ use App\Imports\MedicineImport;
 use App\Exports\MedicineSampleExport;
 use App\Models\ReviewModel;
 use Maatwebsite\Excel\Facades\Excel;
+use Maatwebsite\Excel\Imports\HeadingRowFormatter;
 use Exception;
 
 class MedicineController extends Controller
@@ -289,10 +290,12 @@ class MedicineController extends Controller
 
                 // Delete old gallery images
                 if (!empty($medicine->medicine_image)) {
+                    $oldGallery = is_array($medicine->medicine_image)
+                        ? $medicine->medicine_image
+                        : (json_decode($medicine->medicine_image, true) ?: []);
 
-                    foreach (json_decode($medicine->medicine_image, true) as $oldImage) {
-
-                        if (file_exists(public_path($oldImage))) {
+                    foreach ($oldGallery as $oldImage) {
+                        if ($oldImage && file_exists(public_path($oldImage))) {
                             unlink(public_path($oldImage));
                         }
                     }
@@ -363,12 +366,53 @@ class MedicineController extends Controller
     public function import(Request $request)
     {
         $request->validate([
-            'file' => 'required|mimes:xlsx,xls,csv'
+            'file' => 'required|file|mimes:xlsx,xls,csv|max:51200',
+        ], [
+            'file.required' => 'Please select an Excel or CSV file to import.',
+            'file.mimes' => 'The uploaded file must be a valid .xlsx, .xls, or .csv spreadsheet.',
+            'file.max' => 'The file size must not exceed 50MB.',
         ]);
 
-        Excel::import(new MedicineImport, $request->file('file'));
+        // Allocate sufficient time and memory for large Excel spreadsheets
+        @set_time_limit(300);
+        @ini_set('memory_limit', '512M');
 
-        return back()->with('success', 'Medicines Imported Successfully');
+        // Prevent column slug collision (e.g. M.R.P. vs MRP) by keeping raw headers
+        HeadingRowFormatter::default('none');
+
+        try {
+            $import = new MedicineImport();
+            Excel::import($import, $request->file('file'));
+
+            $summary = [
+                'total_rows'   => $import->getTotalRows(),
+                'imported'     => $import->getImportedCount(),
+                'skipped'      => $import->getSkippedCount(),
+                'failed'       => $import->getFailedCount(),
+                'total_errors' => $import->getTotalValidationErrors(),
+            ];
+
+            // Store max 20 errors for user display (prevents session size limits)
+            $first20Errors = $import->getValidationErrors();
+
+            $message = "Import Completed: {$summary['imported']} imported, {$summary['skipped']} skipped (blank/headers), {$summary['failed']} failed.";
+
+            $response = back()->with('import_summary', $summary)
+                             ->with('import_errors', $first20Errors);
+
+            if ($summary['imported'] > 0 && $summary['failed'] === 0) {
+                return $response->with('success', $message);
+            } elseif ($summary['imported'] > 0) {
+                return $response->with('warning', $message);
+            } else {
+                return $response->with('error', $message);
+            }
+        } catch (Exception $e) {
+            Log::error('Medicine import error: ' . $e->getMessage(), ['exception' => $e]);
+            return back()->with('error', 'Import failed due to an error: ' . $e->getMessage());
+        } finally {
+            HeadingRowFormatter::reset();
+        }
     }
 
     public function downloadSample()
@@ -391,12 +435,14 @@ class MedicineController extends Controller
                 'usage_instructions',
                 'discount',
                 'quantity',
+                'stock',
                 'manufacturer',
                 'reorder_level',
                 'description',
                 'price',
                 'unit_type',
                 'pack_size',
+                'status',
                 'manufacture_date',
                 'expiry_date',
                 'image',
@@ -405,42 +451,46 @@ class MedicineController extends Controller
 
             // Sample Row 1
             fputcsv($file, [
-                'Paracetamol',
-                1,
+                'Paracetamol 500mg',
+                9,
                 'B123',
-                'After meal',
+                'After meal twice daily',
                 10,
+                100,
                 100,
                 'ABC Pharma',
                 20,
-                'Fever medicine',
+                'Effective for fever and headache relief',
                 50,
-                'Tablet',
+                'Tablets',
                 '10 Tablets',
+                'In Stock',
                 '2026-01-01',
                 '2028-01-01',
-                'paracetamol.jpg',
-                '"[\"uploads\\\/medicine\\\/gallery\\\/1781677113_6a323c39bfde3.webp\"]"'
+                'uploads/medicine/paracetamol.jpg',
+                'uploads/medicine/gallery/g1.jpg, uploads/medicine/gallery/g2.jpg'
             ]);
 
             // Sample Row 2
             fputcsv($file, [
-                'Dolo 650',
-                2,
+                'Vitamin C 1000mg',
+                5,
                 'B124',
-                'Twice Daily',
+                'One tablet daily with water',
                 5,
                 80,
-                'Micro Labs',
+                80,
+                'HealthCare Ltd',
                 15,
-                'Pain Relief',
+                'Immunity booster and antioxidant supplement',
                 35,
-                'Tablet',
-                '15 Tablets',
+                'Tablets',
+                '30 Tablets',
+                'In Stock',
                 '2026-02-01',
                 '2028-02-01',
-                'dolo650.jpg',
-                '"[\"uploads\\\/medicine\\\/gallery\\\/1781677113_6a323c39bfde3.webp\"]"'
+                'uploads/medicine/vitaminc.jpg',
+                'uploads/medicine/gallery/v1.jpg'
             ]);
 
             fclose($file);

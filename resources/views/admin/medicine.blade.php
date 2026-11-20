@@ -38,6 +38,66 @@
         </div>
     </div>
 
+    @if(session('success'))
+        <div class="alert alert-success" style="background:#d1e7dd;color:#0f5132;padding:12px 16px;border-radius:8px;margin-bottom:16px;border:1px solid #badbcc;">
+            <i class="fa-solid fa-circle-check"></i> {{ session('success') }}
+        </div>
+    @endif
+    @if(session('warning'))
+        <div class="alert alert-warning" style="background:#fff3cd;color:#664d03;padding:12px 16px;border-radius:8px;margin-bottom:16px;border:1px solid #ffecb5;">
+            <i class="fa-solid fa-triangle-exclamation"></i> {{ session('warning') }}
+        </div>
+    @endif
+    @if(session('error'))
+        <div class="alert alert-danger" style="background:#f8d7da;color:#842029;padding:12px 16px;border-radius:8px;margin-bottom:16px;border:1px solid #f5c2c7;">
+            <i class="fa-solid fa-circle-xmark"></i> {{ session('error') }}
+        </div>
+    @endif
+
+    @if(session('import_summary'))
+        <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+            <h4 style="margin:0 0 12px 0;font-size:16px;font-weight:600;color:#1e293b;">
+                <i class="fa-solid fa-file-excel" style="color:#059669;margin-right:8px;"></i> Import Summary
+            </h4>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:12px;margin-bottom:12px;">
+                <div style="background:#f8fafc;padding:10px;border-radius:6px;border-left:4px solid #3b82f6;">
+                    <div style="font-size:12px;color:#64748b;">Total Rows</div>
+                    <div style="font-size:18px;font-weight:700;color:#1e293b;">{{ number_format(session('import_summary')['total_rows']) }}</div>
+                </div>
+                <div style="background:#f8fafc;padding:10px;border-radius:6px;border-left:4px solid #10b981;">
+                    <div style="font-size:12px;color:#64748b;">Imported</div>
+                    <div style="font-size:18px;font-weight:700;color:#059669;">{{ number_format(session('import_summary')['imported']) }}</div>
+                </div>
+                <div style="background:#f8fafc;padding:10px;border-radius:6px;border-left:4px solid #64748b;">
+                    <div style="font-size:12px;color:#64748b;">Skipped (Blank)</div>
+                    <div style="font-size:18px;font-weight:700;color:#475569;">{{ number_format(session('import_summary')['skipped']) }}</div>
+                </div>
+                <div style="background:#f8fafc;padding:10px;border-radius:6px;border-left:4px solid #ef4444;">
+                    <div style="font-size:12px;color:#64748b;">Failed Rows</div>
+                    <div style="font-size:18px;font-weight:700;color:#dc2626;">{{ number_format(session('import_summary')['failed']) }}</div>
+                </div>
+                <div style="background:#f8fafc;padding:10px;border-radius:6px;border-left:4px solid #f59e0b;">
+                    <div style="font-size:12px;color:#64748b;">Validation Errors</div>
+                    <div style="font-size:18px;font-weight:700;color:#d97706;">{{ number_format(session('import_summary')['total_errors']) }}</div>
+                </div>
+            </div>
+
+            @if(!empty(session('import_errors')))
+                <div style="background:#fef2f2;border:1px solid #fee2e2;border-radius:6px;padding:12px;margin-top:8px;">
+                    <strong style="color:#991b1b;font-size:13px;">
+                        <i class="fa-solid fa-triangle-exclamation"></i> 
+                        Sample Validation Errors (Showing first {{ count(session('import_errors')) }} of {{ number_format(session('import_summary')['total_errors']) }} total errors):
+                    </strong>
+                    <ul style="margin:8px 0 0 20px;padding:0;color:#b91c1c;font-size:12px;max-height:200px;overflow-y:auto;">
+                        @foreach(session('import_errors') as $err)
+                            <li style="margin-bottom:4px;">{{ $err }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+        </div>
+    @endif
+
     <!-- STATS -->
     <div class="stats-grid">
         <div class="stat-card" onclick="filterByStatus('All Status')">

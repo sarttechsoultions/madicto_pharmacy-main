@@ -74,22 +74,21 @@
 
 
                         @if($medicine->medicine_image)
-
+                        @php
+                            $gallery = is_array($medicine->medicine_image)
+                                ? $medicine->medicine_image
+                                : (json_decode($medicine->medicine_image, true) ?: []);
+                        @endphp
+                        @if(!empty($gallery))
                         <div class="row mt-3">
-
-                            @foreach(json_decode($medicine->medicine_image,true) as $img)
-
+                            @foreach($gallery as $img)
                             <div class="col-4 mb-2">
-
                                 <img src="{{ asset($img) }}"
                                     class="img-fluid rounded border">
-
                             </div>
-
                             @endforeach
-
                         </div>
-
+                        @endif
                         @endif
 
                     </div>

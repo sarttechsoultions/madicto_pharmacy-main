@@ -51,6 +51,23 @@
                 <i class="fa-solid fa-bag-shopping"></i><span>Orders</span>
             </a>
 
+            <div class="nav-label" style="margin-top:10px;">Lab Management</div>
+            <a class="nav-item {{ request()->routeIs('admin.lab.dashboard') ? 'active' : '' }}" href="{{ route('admin.lab.dashboard') }}">
+                <i class="fa-solid fa-flask-vial"></i><span>Lab Dashboard</span>
+            </a>
+            <a class="nav-item {{ request()->routeIs('admin.lab.setup*') ? 'active' : '' }}" href="{{ route('admin.lab.setup') }}">
+                <i class="fa-solid fa-hospital"></i><span>Lab Setup</span>
+            </a>
+            <a class="nav-item {{ request()->routeIs('admin.lab.tests*') ? 'active' : '' }}" href="{{ route('admin.lab.tests') }}">
+                <i class="fa-solid fa-vial-virus"></i><span>Manage Lab Tests</span>
+            </a>
+            <a class="nav-item {{ request()->routeIs('admin.lab.categories*') ? 'active' : '' }}" href="{{ route('admin.lab.categories') }}">
+                <i class="fa-solid fa-layer-group"></i><span>Lab Categories</span>
+            </a>
+            <a class="nav-item {{ request()->routeIs('admin.lab.orders*') ? 'active' : '' }}" href="{{ route('admin.lab.orders') }}">
+                <i class="fa-solid fa-clipboard-list"></i><span>Lab Test Orders</span>
+            </a>
+
             <div class="nav-label" style="margin-top:10px;">Management</div>
             <a class="nav-item {{ request()->routeIs('user.index') ? 'active' : '' }}" href="{{ route('user.index') }}">
                 <i class="fa-solid fa-users"></i><span>Users</span>
