@@ -47,22 +47,29 @@ class MedicineController extends Controller
         }
 
         // Status Filter
-        // Status Filter (Quantity Based)
         if ($request->filled('status')) {
-
             switch ($request->status) {
-
                 case 'In Stock':
-                    $query->where('quantity', '>', 5);
+                    $query->where(function ($q) {
+                        $q->whereNull('status')->orWhere('status', '!=', 'Inactive');
+                    })->where('quantity', '>', 5);
                     break;
 
                 case 'Low Stock':
-                    $query->where('quantity', '>', 0)
-                        ->where('quantity', '<=', 5);
+                    $query->where(function ($q) {
+                        $q->whereNull('status')->orWhere('status', '!=', 'Inactive');
+                    })->where('quantity', '>', 0)
+                      ->where('quantity', '<=', 5);
                     break;
 
                 case 'Out of Stock':
-                    $query->where('quantity', 0);
+                    $query->where(function ($q) {
+                        $q->whereNull('status')->orWhere('status', '!=', 'Inactive');
+                    })->where('quantity', 0);
+                    break;
+
+                case 'Inactive':
+                    $query->where('status', 'Inactive');
                     break;
             }
         }
@@ -115,13 +122,21 @@ class MedicineController extends Controller
 
         $medicenesall = medicineModel::count();
 
-        $medicenesinstocks = medicineModel::where('quantity', '>', 5)->count();
+        $medicenesinstocks = medicineModel::where(function ($q) {
+            $q->whereNull('status')->orWhere('status', '!=', 'Inactive');
+        })->where('quantity', '>', 5)->count();
 
-        $mediceneslowstocks = medicineModel::where('quantity', '>', 0)
-            ->where('quantity', '<=', 5)
-            ->count();
+        $mediceneslowstocks = medicineModel::where(function ($q) {
+            $q->whereNull('status')->orWhere('status', '!=', 'Inactive');
+        })->where('quantity', '>', 0)
+          ->where('quantity', '<=', 5)
+          ->count();
 
-        $medicenesoutofstocks = medicineModel::where('quantity', 0)->count();
+        $medicenesoutofstocks = medicineModel::where(function ($q) {
+            $q->whereNull('status')->orWhere('status', '!=', 'Inactive');
+        })->where('quantity', 0)->count();
+
+        $medicenesinactive = medicineModel::where('status', 'Inactive')->count();
 
         return view(
             'admin.medicine',
@@ -131,7 +146,8 @@ class MedicineController extends Controller
                 'medicenesall',
                 'medicenesinstocks',
                 'mediceneslowstocks',
-                'medicenesoutofstocks'
+                'medicenesoutofstocks',
+                'medicenesinactive'
             )
         );
     }
@@ -161,58 +177,62 @@ class MedicineController extends Controller
             $data->price = $request->price;
             $data->unit_type = $request->unit_type;
             $data->pack_size = $request->pack_size;
-            $data->status = $request->status ?? 'In Stock';
             $data->manufacture_date = $request->manufacture_date;
             $data->expiry_date = $request->expiry_date;
+            $data->quantity = $request->quantity ?? 0;
+            $data->stock = $request->stock ?? $request->quantity ?? 0;
 
-            $data->quantity = $request->quantity;
-
-            // Quantity based status
-            if ($request->quantity > 5) {
-                $data->status = 'In Stock';
-            } elseif ($request->quantity > 0) {
-                $data->status = 'Low Stock';
+            // Preserve explicit status (e.g. Inactive, In Stock, etc.) or calculate based on quantity
+            if ($request->filled('status')) {
+                $data->status = $request->status;
             } else {
-                $data->status = 'Out of Stock';
+                $qty = (int)$data->quantity;
+                $data->status = $qty > 5 ? 'In Stock' : ($qty > 0 ? 'Low Stock' : 'Out of Stock');
             }
-
 
             /* Single Image */
             if ($request->hasFile('image')) {
-
+                \Illuminate\Support\Facades\File::ensureDirectoryExists(public_path('uploads/medicine'));
                 $img = $request->file('image');
-
                 $imageName = time() . '_main_' . uniqid() . '.' . $img->getClientOriginalExtension();
-
                 $img->move(public_path('uploads/medicine'), $imageName);
-
                 $data->image = 'uploads/medicine/' . $imageName;
             }
 
             /* Multiple Images */
             $medicineImages = [];
-
             if ($request->hasFile('medicine_image')) {
-
+                \Illuminate\Support\Facades\File::ensureDirectoryExists(public_path('uploads/medicine/gallery'));
                 foreach ($request->file('medicine_image') as $img) {
-
                     $fileName = time() . '_' . uniqid() . '.' . $img->getClientOriginalExtension();
-
                     $img->move(public_path('uploads/medicine/gallery'), $fileName);
-
                     $medicineImages[] = 'uploads/medicine/gallery/' . $fileName;
                 }
             }
 
             $data->medicine_image = json_encode($medicineImages);
-
             $data->save();
+
+            if ($request->wantsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => true,
+                    'status'  => true,
+                    'message' => 'Medicine added successfully!',
+                    'data'    => $data->fresh('category'),
+                ], 201);
+            }
 
             return redirect()->back()->with('success', 'Medicine added successfully!');
         } catch (Exception $e) {
+            Log::error('Medicine store error: ' . $e->getMessage());
 
-            // Log error
-            Log::error($e->getMessage());
+            if ($request->wantsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'status'  => false,
+                    'message' => 'Something went wrong! ' . $e->getMessage(),
+                ], 500);
+            }
 
             return redirect()->back()
                 ->withInput()
@@ -247,68 +267,56 @@ class MedicineController extends Controller
             $medicine->pack_size = $request->pack_size;
             $medicine->manufacture_date = $request->manufacture_date;
             $medicine->expiry_date = $request->expiry_date;
-            $medicine->quantity = $request->quantity;
+            $medicine->quantity = $request->quantity ?? $medicine->quantity;
+            $medicine->stock = $request->stock ?? $request->quantity ?? $medicine->stock;
 
-            // Quantity based status
-            if ($request->quantity > 5) {
-                $medicine->status = 'In Stock';
-            } elseif ($request->quantity > 0) {
-                $medicine->status = 'Low Stock';
+            // Preserve explicit status or calculate based on quantity
+            if ($request->filled('status')) {
+                $medicine->status = $request->status;
             } else {
-                $medicine->status = 'Out of Stock';
+                $qty = (int)$medicine->quantity;
+                $medicine->status = $qty > 5 ? 'In Stock' : ($qty > 0 ? 'Low Stock' : 'Out of Stock');
             }
 
-            /*
-        |--------------------------------------------------------------------------
-        | Main Image
-        |--------------------------------------------------------------------------
-        */
-
+            /* Main Image */
             if ($request->hasFile('image')) {
-
-                // Old image delete
-                if ($medicine->image && file_exists(public_path($medicine->image))) {
-                    unlink(public_path($medicine->image));
+                // Old image delete safely
+                if ($medicine->image) {
+                    $imgFull = public_path($medicine->image);
+                    $imgPrefix = public_path('uploads/medicine/' . $medicine->image);
+                    if (\Illuminate\Support\Facades\File::exists($imgFull)) {
+                        \Illuminate\Support\Facades\File::delete($imgFull);
+                    } elseif (\Illuminate\Support\Facades\File::exists($imgPrefix)) {
+                        \Illuminate\Support\Facades\File::delete($imgPrefix);
+                    }
                 }
 
+                \Illuminate\Support\Facades\File::ensureDirectoryExists(public_path('uploads/medicine'));
                 $img = $request->file('image');
-
                 $imageName = time() . '_main_' . uniqid() . '.' . $img->getClientOriginalExtension();
-
                 $img->move(public_path('uploads/medicine'), $imageName);
-
                 $medicine->image = 'uploads/medicine/' . $imageName;
             }
 
-            /*
-        |--------------------------------------------------------------------------
-        | Gallery Images
-        |--------------------------------------------------------------------------
-        */
-
+            /* Gallery Images */
             if ($request->hasFile('medicine_image')) {
-
-                // Delete old gallery images
+                \Illuminate\Support\Facades\File::ensureDirectoryExists(public_path('uploads/medicine/gallery'));
                 if (!empty($medicine->medicine_image)) {
                     $oldGallery = is_array($medicine->medicine_image)
                         ? $medicine->medicine_image
                         : (json_decode($medicine->medicine_image, true) ?: []);
 
                     foreach ($oldGallery as $oldImage) {
-                        if ($oldImage && file_exists(public_path($oldImage))) {
-                            unlink(public_path($oldImage));
+                        if ($oldImage && \Illuminate\Support\Facades\File::exists(public_path($oldImage))) {
+                            \Illuminate\Support\Facades\File::delete(public_path($oldImage));
                         }
                     }
                 }
 
                 $gallery = [];
-
                 foreach ($request->file('medicine_image') as $img) {
-
                     $fileName = time() . '_' . uniqid() . '.' . $img->getClientOriginalExtension();
-
                     $img->move(public_path('uploads/medicine/gallery'), $fileName);
-
                     $gallery[] = 'uploads/medicine/gallery/' . $fileName;
                 }
 
@@ -317,10 +325,26 @@ class MedicineController extends Controller
 
             $medicine->save();
 
+            if ($request->wantsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => true,
+                    'status'  => true,
+                    'message' => 'Medicine updated successfully!',
+                    'data'    => $medicine->fresh('category'),
+                ], 200);
+            }
+
             return redirect()->back()->with('success', 'Medicine updated successfully!');
         } catch (Exception $e) {
+            Log::error('Medicine update error: ' . $e->getMessage());
 
-            Log::error($e->getMessage());
+            if ($request->wantsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'status'  => false,
+                    'message' => 'Something went wrong! ' . $e->getMessage(),
+                ], 500);
+            }
 
             return redirect()->back()
                 ->withInput()
@@ -328,22 +352,85 @@ class MedicineController extends Controller
         }
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         try {
-
             $medicine = medicineModel::findOrFail($id);
 
+            if ($medicine->image) {
+                $imgFull = public_path($medicine->image);
+                $imgPrefix = public_path('uploads/medicine/' . $medicine->image);
+                if (\Illuminate\Support\Facades\File::exists($imgFull)) {
+                    \Illuminate\Support\Facades\File::delete($imgFull);
+                } elseif (\Illuminate\Support\Facades\File::exists($imgPrefix)) {
+                    \Illuminate\Support\Facades\File::delete($imgPrefix);
+                }
+            }
+
             $medicine->delete();
+
+            if ($request->wantsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => true,
+                    'status'  => true,
+                    'message' => 'Medicine deleted successfully.',
+                ], 200);
+            }
 
             return redirect()->back()
                 ->with('success', 'Medicine deleted successfully.');
         } catch (Exception $e) {
+            Log::error('Medicine delete error: ' . $e->getMessage());
 
-            Log::error($e->getMessage());
+            if ($request->wantsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'status'  => false,
+                    'message' => 'Something went wrong.',
+                ], 500);
+            }
 
             return redirect()->back()
                 ->with('error', 'Something went wrong.');
+        }
+    }
+
+    public function toggleStatus(Request $request, $id)
+    {
+        try {
+            $medicine = medicineModel::findOrFail($id);
+
+            if ($medicine->status === 'Inactive') {
+                $qty = (int)$medicine->quantity;
+                $medicine->status = $qty > 5 ? 'In Stock' : ($qty > 0 ? 'Low Stock' : 'Out of Stock');
+            } else {
+                $medicine->status = 'Inactive';
+            }
+
+            $medicine->save();
+
+            if ($request->wantsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => true,
+                    'status'  => true,
+                    'message' => "Medicine status changed to {$medicine->status}",
+                    'data'    => $medicine,
+                ], 200);
+            }
+
+            return redirect()->back()->with('success', "Medicine status changed to {$medicine->status}");
+        } catch (Exception $e) {
+            Log::error('Medicine toggleStatus error: ' . $e->getMessage());
+
+            if ($request->wantsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'status'  => false,
+                    'message' => 'Something went wrong.',
+                ], 500);
+            }
+
+            return redirect()->back()->with('error', 'Something went wrong.');
         }
     }
 

@@ -194,6 +194,7 @@
                     <option value="In Stock" {{ request('status')=='In Stock' ? 'selected' : '' }}>In Stock</option>
                     <option value="Low Stock" {{ request('status')=='Low Stock' ? 'selected' : '' }}>Low Stock</option>
                     <option value="Out of Stock" {{ request('status')=='Out of Stock' ? 'selected' : '' }}>Out of Stock</option>
+                    <option value="Inactive" {{ request('status')=='Inactive' ? 'selected' : '' }}>Inactive</option>
 
                 </select>
             </div>
@@ -270,7 +271,10 @@
                         <td>{{ $medicine->unit_type }}</td>
                         <td>₹ {{ number_format($medicine->price, 2) }}</td>
                         <td>{{ $medicine->quantity }}</td>
-                        <td>@if($medicine->quantity > 5)
+                        <td>
+                            @if($medicine->status === 'Inactive')
+                            <span class="badge" style="background:#6b7280;color:#fff;">Inactive</span>
+                            @elseif($medicine->quantity > 5)
                             <span class="badge bg-success">In Stock</span>
                             @elseif($medicine->quantity > 0)
                             <span class="badge bg-warning">Low Stock</span>
@@ -293,6 +297,13 @@
                         </td>
                         <td>
                             <div class="actions-cell">
+                                <form action="{{ route('admin.medicine.toggleStatus', $medicine->id) }}" method="POST" style="display:inline;">
+                                    @csrf
+                                    <button type="submit" class="action-btn" title="Toggle Status (Current: {{ $medicine->status }})" style="color:{{ $medicine->status === 'Inactive' ? '#ef4444' : '#10b981' }};">
+                                        <i class="fa-solid {{ $medicine->status === 'Inactive' ? 'fa-toggle-off' : 'fa-toggle-on' }}"></i>
+                                    </button>
+                                </form>
+
                                 <button
                                     class="action-btn edit"
                                     onclick='editMedicine(@json($medicine))'>
@@ -459,6 +470,17 @@
                                 <div class="mf-group">
                                     <label>Pack Size</label>
                                     <input type="text" id="f-pack" name="pack_size" placeholder="e.g. 10 tabs/strip" />
+                                </div>
+                            </div>
+                            <div class="mf-row single" style="margin-top:12px;margin-bottom:0;">
+                                <div class="mf-group">
+                                    <label>Status</label>
+                                    <select id="f-status" name="status">
+                                        <option value="In Stock">In Stock (Active)</option>
+                                        <option value="Low Stock">Low Stock</option>
+                                        <option value="Out of Stock">Out of Stock</option>
+                                        <option value="Inactive">Inactive</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>

@@ -21,6 +21,7 @@ use Illuminate\Validation\Rules;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class api extends Controller
 {
@@ -28,58 +29,76 @@ class api extends Controller
 
     public function getMedicines(Request $request)
     {
-        $id = $request->id;
+        $id = $request->id ?? $request->route('id');
 
-        // Single medicine
+        // Single medicine details lookup
         if ($id) {
-
-            $medicine = medicineModel::with([
-                'reviews.coustmer'
-            ])
-                ->withCount('reviews')
-                ->withAvg('reviews', 'rating')
-                ->find($id);
-
-            if (!$medicine) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Medicine not found'
-                ], 404);
-            }
-
-            $medicine->is_favourite = MedicineFavourite::where(
-                'coustmer_id',
-                $request->coustmer_id
-            )
-                ->where('medicine_id', $medicine->id)
-                ->exists();
-
-            return response()->json([
-                'success' => true,
-                'data' => $medicine
-            ]);
+            return $this->getMedicineDetail($id, $request);
         }
 
         $query = medicineModel::with([
+            'category',
             'reviews.coustmer'
         ])
             ->withCount('reviews')
             ->withAvg('reviews', 'rating');
 
-        if ($request->filled('name')) {
-            $query->where('name', 'LIKE', '%' . $request->name . '%');
+        // Exclude Inactive medicines unless specifically asked for inactive or all
+        if ($request->status === 'Inactive') {
+            $query->where('status', 'Inactive');
+        } elseif ($request->filled('status') && $request->status !== 'all') {
+            switch ($request->status) {
+                case 'In Stock':
+                    $query->where(function ($q) {
+                        $q->whereNull('status')->orWhere('status', '!=', 'Inactive');
+                    })->where('quantity', '>', 5);
+                    break;
+                case 'Low Stock':
+                    $query->where(function ($q) {
+                        $q->whereNull('status')->orWhere('status', '!=', 'Inactive');
+                    })->where('quantity', '>', 0)->where('quantity', '<=', 5);
+                    break;
+                case 'Out of Stock':
+                    $query->where(function ($q) {
+                        $q->whereNull('status')->orWhere('status', '!=', 'Inactive');
+                    })->where('quantity', 0);
+                    break;
+                default:
+                    $query->where('status', $request->status);
+                    break;
+            }
+        } else {
+            // Default: only active medicines shown to customers
+            $query->active();
+        }
+
+        // Comprehensive search: checks search, query, q, keyword, name, medicine_name
+        $rawSearch = $request->input('search')
+            ?? $request->input('query')
+            ?? $request->input('q')
+            ?? $request->input('keyword')
+            ?? $request->input('name')
+            ?? $request->input('medicine_name');
+
+        $searchTerm = is_string($rawSearch) ? trim($rawSearch) : '';
+        if ($searchTerm !== '') {
+            $query->search($searchTerm);
         }
 
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->category_id);
         }
 
+        if ($request->filled('manufacturer')) {
+            $query->where('manufacturer', 'LIKE', '%' . $request->manufacturer . '%');
+        }
+
         if ($request->filled('min_price')) {
-            $query->where('price', '>=', $request->min_price);
+            $query->where('price', '>=', (float)$request->min_price);
         }
 
         if ($request->filled('max_price')) {
-            $query->where('price', '<=', $request->max_price);
+            $query->where('price', '<=', (float)$request->max_price);
         }
 
         if ($request->filled('unit_type')) {
@@ -87,32 +106,110 @@ class api extends Controller
         }
 
         if ($request->filled('discount')) {
-            $query->where('discount', '>=', $request->discount);
+            $query->where('discount', '>=', (float)$request->discount);
         }
 
-        $perPage = $request->get('per_page', 10);
+        // Sorting
+        if ($request->filled('sort')) {
+            switch ($request->sort) {
+                case 'Price ↑':
+                case 'price_asc':
+                    $query->orderBy('price', 'asc');
+                    break;
+                case 'Price ↓':
+                case 'price_desc':
+                    $query->orderBy('price', 'desc');
+                    break;
+                case 'Name (A-Z)':
+                case 'name_asc':
+                    $query->orderBy('name', 'asc');
+                    break;
+                case 'Name (Z-A)':
+                case 'name_desc':
+                    $query->orderBy('name', 'desc');
+                    break;
+                case 'popular':
+                case 'trending':
+                    $query->orderByDesc('reviews_count');
+                    break;
+                default:
+                    $query->latest('id');
+                    break;
+            }
+        } else {
+            $query->latest('id');
+        }
 
+        $perPage = max(1, min(100, (int)$request->input('per_page', 20)));
         $medicines = $query->paginate($perPage);
 
-        $favouriteIds = MedicineFavourite::where(
-            'coustmer_id',
-            $request->coustmer_id
-        )->pluck('medicine_id')->toArray();
+        $userId = auth('sanctum')->id() ?? auth()->id() ?? $request->coustmer_id ?? $request->customer_id;
+        $favouriteIds = ($userId && Schema::hasTable('medicine_favourites'))
+            ? MedicineFavourite::where('coustmer_id', $userId)->pluck('medicine_id')->map(fn($v) => (string)$v)->toArray()
+            : [];
 
         $medicines->getCollection()->transform(function ($medicine) use ($favouriteIds) {
-
-            $medicine->is_favourite = in_array(
-                $medicine->id,
-                $favouriteIds
-            );
-
+            $medicine->is_favourite = in_array($medicine->id, $favouriteIds);
             return $medicine;
         });
 
         return response()->json([
+            'success'    => true,
+            'status'     => true,
+            'message'    => 'Medicines fetched successfully',
+            'data'       => $medicines->items(),
+            'pagination' => [
+                'total'         => $medicines->total(),
+                'per_page'      => $medicines->perPage(),
+                'current_page'  => $medicines->currentPage(),
+                'last_page'     => $medicines->lastPage(),
+                'has_more_pages'=> $medicines->hasMorePages(),
+                'next_page_url' => $medicines->nextPageUrl(),
+                'prev_page_url' => $medicines->previousPageUrl(),
+            ],
+            'medicines'  => $medicines,
+        ], 200);
+    }
+
+    public function getMedicineDetail($id, Request $request = null)
+    {
+        $medicine = medicineModel::with([
+            'category',
+            'reviews.coustmer'
+        ])
+            ->withCount('reviews')
+            ->withAvg('reviews', 'rating')
+            ->find($id);
+
+        if (!$medicine) {
+            return response()->json([
+                'success' => false,
+                'status'  => false,
+                'message' => 'Medicine not found with ID ' . $id,
+                'data'    => null,
+            ], 404);
+        }
+
+        // Calculate ratings breakdown
+        $medicine->ratings_breakdown = [
+            5 => ReviewModel::where('medicine_id', $id)->where('rating', 5)->count(),
+            4 => ReviewModel::where('medicine_id', $id)->where('rating', 4)->count(),
+            3 => ReviewModel::where('medicine_id', $id)->where('rating', 3)->count(),
+            2 => ReviewModel::where('medicine_id', $id)->where('rating', 2)->count(),
+            1 => ReviewModel::where('medicine_id', $id)->where('rating', 1)->count(),
+        ];
+
+        $userId = auth('sanctum')->id() ?? auth()->id() ?? ($request ? ($request->coustmer_id ?? $request->customer_id) : null);
+        $medicine->is_favourite = ($userId && Schema::hasTable('medicine_favourites'))
+            ? MedicineFavourite::where('coustmer_id', $userId)->where('medicine_id', $medicine->id)->exists()
+            : false;
+
+        return response()->json([
             'success' => true,
-            'data' => $medicines
-        ]);
+            'status'  => true,
+            'message' => 'Medicine details fetched successfully',
+            'data'    => $medicine,
+        ], 200);
     }
 
     public function relatedMedicines($id)
@@ -122,45 +219,46 @@ class api extends Controller
         if (!$medicine) {
             return response()->json([
                 'success' => false,
-                'message' => 'Medicine not found'
+                'status'  => false,
+                'message' => 'Medicine not found',
+                'data'    => [],
             ], 404);
         }
 
-        $relatedMedicines = medicineModel::where('id', '!=', $medicine->id)
-            ->where(function ($query) use ($medicine) {
+        $query = medicineModel::with(['category', 'reviews.coustmer'])
+            ->withCount('reviews')
+            ->withAvg('reviews', 'rating')
+            ->where('id', '!=', $medicine->id)
+            ->active();
 
-                $query->where(
-                    'category_id',
-                    $medicine->category_id
-                );
+        $query->where(function ($q) use ($medicine) {
+            if (!empty($medicine->category_id)) {
+                $q->where('category_id', $medicine->category_id);
+            }
+            if (!empty($medicine->manufacturer)) {
+                $q->orWhere('manufacturer', $medicine->manufacturer);
+            }
+        });
 
-                if (!empty($medicine->description)) {
+        $relatedMedicines = $query->take(10)->get();
 
-                    $words = explode(
-                        ' ',
-                        trim($medicine->description)
-                    );
-
-                    foreach ($words as $word) {
-
-                        if (strlen($word) > 3) {
-
-                            $query->orWhere(
-                                'description',
-                                'LIKE',
-                                '%' . $word . '%'
-                            );
-                        }
-                    }
-                }
-            })
-            ->take(10)
-            ->get();
+        // If fewer than 4 related items, supplement with active medicines from same general group
+        if ($relatedMedicines->count() < 4) {
+            $fallback = medicineModel::with(['category', 'reviews.coustmer'])
+                ->where('id', '!=', $medicine->id)
+                ->whereNotIn('id', $relatedMedicines->pluck('id'))
+                ->active()
+                ->take(10 - $relatedMedicines->count())
+                ->get();
+            $relatedMedicines = $relatedMedicines->concat($fallback);
+        }
 
         return response()->json([
             'success' => true,
-            'data' => $relatedMedicines
-        ]);
+            'status'  => true,
+            'message' => 'Related medicines fetched successfully',
+            'data'    => $relatedMedicines,
+        ], 200);
     }
 
     public function getCategory(Request $request)
@@ -1069,78 +1167,81 @@ class api extends Controller
 
     public function trendingProducts(Request $request)
     {
-        $userId = auth()->id();
+        $userId = auth('sanctum')->id() ?? auth()->id() ?? $request->coustmer_id ?? $request->customer_id;
 
-        $perPage = $request->get('per_page', 10);
+        $perPage = max(1, min(100, (int)$request->input('per_page', 10)));
 
-        $medicines = medicineModel::withCount('reviews')
+        $medicines = medicineModel::with(['category'])
+            ->withCount('reviews')
             ->withAvg('reviews', 'rating')
+            ->active()
             ->orderByDesc('reviews_count')
             ->paginate($perPage);
 
-        $favouriteIds = MedicineFavourite::where('coustmer_id', $userId)
+        $favouriteIds = $userId ? MedicineFavourite::where('coustmer_id', $userId)
             ->pluck('medicine_id')
-            ->flip();
+            ->flip() : collect();
 
         $medicines->getCollection()->transform(function ($medicine) use ($favouriteIds) {
-
             $medicine->is_favourite = isset($favouriteIds[$medicine->id]);
-
             return $medicine;
         });
 
         return response()->json([
-            'status' => true,
-            'data' => $medicines->items(),
+            'success'    => true,
+            'status'     => true,
+            'message'    => 'Trending products fetched successfully',
+            'data'       => $medicines->items(),
             'pagination' => [
-                'current_page' => $medicines->currentPage(),
-                'last_page' => $medicines->lastPage(),
-                'per_page' => $medicines->perPage(),
-                'total' => $medicines->total(),
+                'current_page'  => $medicines->currentPage(),
+                'last_page'     => $medicines->lastPage(),
+                'per_page'      => $medicines->perPage(),
+                'total'         => $medicines->total(),
+                'has_more_pages'=> $medicines->hasMorePages(),
                 'next_page_url' => $medicines->nextPageUrl(),
                 'prev_page_url' => $medicines->previousPageUrl(),
             ]
-        ]);
+        ], 200);
     }
 
     public function dealsOfDay(Request $request)
     {
-        $userId = auth()->id();
+        $userId = auth('sanctum')->id() ?? auth()->id() ?? $request->coustmer_id ?? $request->customer_id;
 
-        $perPage = $request->get('per_page', 10);
+        $perPage = max(1, min(100, (int)$request->input('per_page', 10)));
 
-        $medicines = medicineModel::withCount('reviews')
+        $medicines = medicineModel::with(['category'])
+            ->withCount('reviews')
             ->withAvg('reviews', 'rating')
+            ->active()
             ->where('dod', 1) // Only Deal Of Day products
             ->orderByDesc('discount')
             ->paginate($perPage);
 
-        $favouriteIds = MedicineFavourite::where('coustmer_id', $userId)
+        $favouriteIds = $userId ? MedicineFavourite::where('coustmer_id', $userId)
             ->pluck('medicine_id')
-            ->flip();
+            ->flip() : collect();
 
         $medicines->getCollection()->transform(function ($item) use ($favouriteIds) {
-
-            $item->final_price = $item->price -
-                (($item->price * $item->discount) / 100);
-
             $item->is_favourite = isset($favouriteIds[$item->id]);
-
             return $item;
         });
 
         return response()->json([
-            'status' => true,
-            'data' => $medicines->items(),
+            'success'    => true,
+            'status'     => true,
+            'message'    => 'Deals of the day fetched successfully',
+            'data'       => $medicines->items(),
             'pagination' => [
-                'current_page' => $medicines->currentPage(),
-                'last_page' => $medicines->lastPage(),
-                'per_page' => $medicines->perPage(),
-                'total' => $medicines->total(),
+                'current_page'  => $medicines->currentPage(),
+                'last_page'     => $medicines->lastPage(),
+                'per_page'      => $medicines->perPage(),
+                'total'         => $medicines->total(),
+                'has_more_pages'=> $medicines->hasMorePages(),
                 'next_page_url' => $medicines->nextPageUrl(),
                 'prev_page_url' => $medicines->previousPageUrl(),
             ]
-        ]);
+        ], 200);
     }
 
 
@@ -1229,28 +1330,349 @@ class api extends Controller
 
     public function searchMedicines(Request $request)
     {
-        $query = medicineModel::query();
+        $rawSearch = $request->input('search')
+            ?? $request->input('query')
+            ?? $request->input('q')
+            ?? $request->input('keyword')
+            ?? $request->input('medicine_name')
+            ?? $request->input('name');
 
-        // Medicine Name Search
-        if ($request->filled('medicine_name')) {
-            $query->where('name', 'LIKE', '%' . $request->medicine_name . '%');
+        $searchTerm = is_string($rawSearch) ? trim($rawSearch) : '';
+
+        $query = medicineModel::with([
+            'category',
+            'reviews.coustmer'
+        ])
+            ->withCount('reviews')
+            ->withAvg('reviews', 'rating')
+            ->active();
+
+        if ($searchTerm !== '') {
+            $query->search($searchTerm);
         }
 
-        // Title Search
         if ($request->filled('description')) {
             $query->where('description', 'LIKE', '%' . $request->description . '%');
+        }
+
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        if ($request->filled('manufacturer')) {
+            $query->where('manufacturer', 'LIKE', '%' . $request->manufacturer . '%');
         }
 
         if ($request->filled('unit_type')) {
             $query->where('unit_type', $request->unit_type);
         }
 
-        $medicines = $query->get();
+        if ($request->filled('min_price')) {
+            $query->where('price', '>=', (float)$request->min_price);
+        }
+
+        if ($request->filled('max_price')) {
+            $query->where('price', '<=', (float)$request->max_price);
+        }
+
+        // Sorting
+        if ($request->filled('sort')) {
+            switch ($request->sort) {
+                case 'Price ↑':
+                case 'price_asc':
+                    $query->orderBy('price', 'asc');
+                    break;
+                case 'Price ↓':
+                case 'price_desc':
+                    $query->orderBy('price', 'desc');
+                    break;
+                case 'Name (A-Z)':
+                case 'name_asc':
+                    $query->orderBy('name', 'asc');
+                    break;
+                case 'Name (Z-A)':
+                case 'name_desc':
+                    $query->orderBy('name', 'desc');
+                    break;
+                default:
+                    $query->latest('id');
+                    break;
+            }
+        } else {
+            $query->latest('id');
+        }
+
+        $perPage = max(1, min(100, (int)$request->input('per_page', 20)));
+        $medicines = $query->paginate($perPage);
+
+        $userId = auth('sanctum')->id() ?? auth()->id() ?? $request->coustmer_id ?? $request->customer_id;
+        $favouriteIds = ($userId && Schema::hasTable('medicine_favourites'))
+            ? MedicineFavourite::where('coustmer_id', $userId)->pluck('medicine_id')->map(fn($v) => (string)$v)->toArray()
+            : [];
+
+        $medicines->getCollection()->transform(function ($medicine) use ($favouriteIds) {
+            $medicine->is_favourite = in_array($medicine->id, $favouriteIds);
+            return $medicine;
+        });
+
+        $count = $medicines->total();
+        $message = $count > 0
+            ? "Found {$count} medicine(s) matching your search"
+            : ($searchTerm !== '' ? "No medicines found matching '{$searchTerm}'" : "No medicines found");
 
         return response()->json([
-            'success' => true,
-            'data' => $medicines
+            'success'    => true,
+            'status'     => true,
+            'message'    => $message,
+            'data'       => $medicines->items(),
+            'pagination' => [
+                'total'          => $medicines->total(),
+                'per_page'       => $medicines->perPage(),
+                'current_page'   => $medicines->currentPage(),
+                'last_page'      => $medicines->lastPage(),
+                'has_more_pages' => $medicines->hasMorePages(),
+                'next_page_url'  => $medicines->nextPageUrl(),
+                'prev_page_url'  => $medicines->previousPageUrl(),
+            ],
+            'medicines'  => $medicines,
+        ], 200);
+    }
+
+    public function storeMedicine(Request $request)
+    {
+        $request->validate([
+            'name'             => 'required|string|max:255',
+            'price'            => 'required',
+            'category_id'      => 'nullable',
+            'quantity'         => 'nullable|numeric|min:0',
+            'stock'            => 'nullable|numeric|min:0',
+            'image'            => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+            'medicine_image.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
         ]);
+
+        try {
+            $data = new medicineModel();
+            $data->name = $request->name;
+            $data->category_id = $request->category_id;
+            $data->batch_no = $request->batch_no;
+            $data->usage_instructions = $request->usage_instructions;
+            $data->discount = $request->discount ?? 0;
+            $data->manufacturer = $request->manufacturer;
+            $data->reorder_level = $request->reorder_level ?? 20;
+            $data->description = $request->description;
+            $data->price = $request->price;
+            $data->unit_type = $request->unit_type ?? 'Tablets';
+            $data->pack_size = $request->pack_size;
+            $data->manufacture_date = $request->manufacture_date;
+            $data->expiry_date = $request->expiry_date;
+            $data->quantity = $request->quantity ?? $request->stock ?? 0;
+            $data->stock = $request->stock ?? $request->quantity ?? 0;
+
+            if ($request->filled('status')) {
+                $data->status = $request->status;
+            } else {
+                $qty = (int)$data->quantity;
+                $data->status = $qty > 5 ? 'In Stock' : ($qty > 0 ? 'Low Stock' : 'Out of Stock');
+            }
+
+            if ($request->hasFile('image')) {
+                File::ensureDirectoryExists(public_path('uploads/medicine'));
+                $img = $request->file('image');
+                $imageName = time() . '_main_' . uniqid() . '.' . $img->getClientOriginalExtension();
+                $img->move(public_path('uploads/medicine'), $imageName);
+                $data->image = 'uploads/medicine/' . $imageName;
+            }
+
+            $medicineImages = [];
+            if ($request->hasFile('medicine_image')) {
+                File::ensureDirectoryExists(public_path('uploads/medicine/gallery'));
+                foreach ($request->file('medicine_image') as $img) {
+                    $fileName = time() . '_' . uniqid() . '.' . $img->getClientOriginalExtension();
+                    $img->move(public_path('uploads/medicine/gallery'), $fileName);
+                    $medicineImages[] = 'uploads/medicine/gallery/' . $fileName;
+                }
+            }
+            $data->medicine_image = json_encode($medicineImages);
+
+            $data->save();
+
+            return response()->json([
+                'success' => true,
+                'status'  => true,
+                'message' => 'Medicine added successfully!',
+                'data'    => $data->fresh(['category']),
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'status'  => false,
+                'message' => 'Failed to add medicine: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function updateMedicine(Request $request, $id)
+    {
+        $request->validate([
+            'name'             => 'required|string|max:255',
+            'price'            => 'required',
+            'image'            => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+            'medicine_image.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+        ]);
+
+        try {
+            $medicine = medicineModel::findOrFail($id);
+            $medicine->name = $request->name;
+            $medicine->category_id = $request->category_id;
+            $medicine->batch_no = $request->batch_no;
+            $medicine->usage_instructions = $request->usage_instructions;
+            $medicine->discount = $request->discount ?? $medicine->discount;
+            $medicine->manufacturer = $request->manufacturer;
+            $medicine->reorder_level = $request->reorder_level ?? $medicine->reorder_level;
+            $medicine->description = $request->description;
+            $medicine->price = $request->price;
+            $medicine->unit_type = $request->unit_type ?? $medicine->unit_type;
+            $medicine->pack_size = $request->pack_size ?? $medicine->pack_size;
+            $medicine->manufacture_date = $request->manufacture_date ?? $medicine->manufacture_date;
+            $medicine->expiry_date = $request->expiry_date ?? $medicine->expiry_date;
+            $medicine->quantity = $request->quantity ?? $request->stock ?? $medicine->quantity;
+            $medicine->stock = $request->stock ?? $request->quantity ?? $medicine->stock;
+
+            if ($request->filled('status')) {
+                $medicine->status = $request->status;
+            } else {
+                $qty = (int)$medicine->quantity;
+                $medicine->status = $qty > 5 ? 'In Stock' : ($qty > 0 ? 'Low Stock' : 'Out of Stock');
+            }
+
+            if ($request->hasFile('image')) {
+                if ($medicine->image) {
+                    $existingPath = public_path($medicine->image);
+                    if (File::exists($existingPath)) {
+                        File::delete($existingPath);
+                    }
+                }
+                File::ensureDirectoryExists(public_path('uploads/medicine'));
+                $img = $request->file('image');
+                $imageName = time() . '_main_' . uniqid() . '.' . $img->getClientOriginalExtension();
+                $img->move(public_path('uploads/medicine'), $imageName);
+                $medicine->image = 'uploads/medicine/' . $imageName;
+            }
+
+            if ($request->hasFile('medicine_image')) {
+                File::ensureDirectoryExists(public_path('uploads/medicine/gallery'));
+                $gallery = [];
+                foreach ($request->file('medicine_image') as $img) {
+                    $fileName = time() . '_' . uniqid() . '.' . $img->getClientOriginalExtension();
+                    $img->move(public_path('uploads/medicine/gallery'), $fileName);
+                    $gallery[] = 'uploads/medicine/gallery/' . $fileName;
+                }
+                $medicine->medicine_image = json_encode($gallery);
+            }
+
+            $medicine->save();
+
+            return response()->json([
+                'success' => true,
+                'status'  => true,
+                'message' => 'Medicine updated successfully!',
+                'data'    => $medicine->fresh(['category']),
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'status'  => false,
+                'message' => 'Failed to update medicine: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function destroyMedicine($id)
+    {
+        try {
+            $medicine = medicineModel::findOrFail($id);
+
+            // Clean up main image
+            if ($medicine->image && File::exists(public_path($medicine->image))) {
+                File::delete(public_path($medicine->image));
+            }
+
+            $medicine->delete();
+
+            return response()->json([
+                'success' => true,
+                'status'  => true,
+                'message' => 'Medicine deleted successfully.',
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'status'  => false,
+                'message' => 'Failed to delete medicine: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function uploadMedicineImage(Request $request, $id)
+    {
+        $request->validate([
+            'image' => 'required|image|mimes:jpg,jpeg,png,webp|max:5120',
+        ]);
+
+        try {
+            $medicine = medicineModel::findOrFail($id);
+
+            File::ensureDirectoryExists(public_path('uploads/medicine'));
+            $img = $request->file('image');
+            $imageName = time() . '_main_' . uniqid() . '.' . $img->getClientOriginalExtension();
+            $img->move(public_path('uploads/medicine'), $imageName);
+
+            $medicine->image = 'uploads/medicine/' . $imageName;
+            $medicine->save();
+
+            return response()->json([
+                'success'   => true,
+                'status'    => true,
+                'message'   => 'Medicine image uploaded successfully!',
+                'image_url' => asset($medicine->image),
+                'data'      => $medicine,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'status'  => false,
+                'message' => 'Failed to upload image: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function toggleMedicineStatus($id)
+    {
+        try {
+            $medicine = medicineModel::findOrFail($id);
+
+            if ($medicine->status === 'Inactive') {
+                $qty = (int)$medicine->quantity;
+                $medicine->status = $qty > 5 ? 'In Stock' : ($qty > 0 ? 'Low Stock' : 'Out of Stock');
+            } else {
+                $medicine->status = 'Inactive';
+            }
+
+            $medicine->save();
+
+            return response()->json([
+                'success' => true,
+                'status'  => true,
+                'message' => "Medicine status updated to {$medicine->status}",
+                'data'    => $medicine,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'status'  => false,
+                'message' => 'Failed to toggle status: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function logout(Request $request)

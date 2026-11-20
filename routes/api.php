@@ -19,9 +19,11 @@ Route::post('/forgot-password', [auth::class, 'forgotPassword']);
 Route::post('/send-otp', [auth::class, 'sendOtp']);
 Route::post('/verify-otp', [auth::class, 'verifyOtp']);
 
-Route::post('/medicines', [api::class, 'getMedicines']);
-Route::get('/medicines-search', [api::class, 'searchMedicines']);
-Route::get('/medicines/{id}/related', [api::class, 'relatedMedicines']);
+// Public Medicine APIs
+Route::match(['get', 'post'], '/medicines', [api::class, 'getMedicines']);
+Route::match(['get', 'post'], '/medicines-search', [api::class, 'searchMedicines']);
+Route::get('/medicines/{id}', [api::class, 'getMedicineDetail'])->where('id', '[0-9]+');
+Route::get('/medicines/{id}/related', [api::class, 'relatedMedicines'])->where('id', '[0-9]+');
 Route::post('/categories', [api::class, 'getCategory']);
 Route::get('/banners', [api::class, 'getBanners']);
 
@@ -75,4 +77,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/medicine-favourite', [api::class, 'toggleFavourite']);
     Route::get('/favourite-medicines', [api::class, 'favouriteMedicines']);
+
+    // Admin / Management Medicine APIs
+    Route::post('/medicines/create', [api::class, 'storeMedicine']);
+    Route::post('/medicines/{id}/update', [api::class, 'updateMedicine'])->where('id', '[0-9]+');
+    Route::put('/medicines/{id}', [api::class, 'updateMedicine'])->where('id', '[0-9]+');
+    Route::delete('/medicines/{id}', [api::class, 'destroyMedicine'])->where('id', '[0-9]+');
+    Route::post('/medicines/{id}/image', [api::class, 'uploadMedicineImage'])->where('id', '[0-9]+');
+    Route::post('/medicines/{id}/toggle-status', [api::class, 'toggleMedicineStatus'])->where('id', '[0-9]+');
 });

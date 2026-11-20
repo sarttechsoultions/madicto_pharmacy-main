@@ -95,6 +95,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/reviews', [ReviewController::class, 'index'])->name('reviews.index');
 
     Route::post('/medicine/dod/{id}', [MedicineController::class, 'toggleDod'])->name('medicine.dod');
+    Route::post('/medicine/{id}/toggle-status', [MedicineController::class, 'toggleStatus'])->name('admin.medicine.toggleStatus');
 
     Route::post('/medicine/import', [MedicineController::class, 'import']);
     Route::get('/medicine/sample-download', [MedicineController::class, 'downloadSample']);

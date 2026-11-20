@@ -265,6 +265,7 @@ function clearForm() {
     });
   document.getElementById('f-cat').value = '';
   document.getElementById('f-unit').value = 'Tablets';
+  if (document.getElementById('f-status')) document.getElementById('f-status').value = 'In Stock';
   document.getElementById('f-rx').checked = true;
   document.getElementById('f-controlled').checked = false;
 }
@@ -547,6 +548,9 @@ function editMedicine(data) {
 
   if (document.getElementById('f-controlled'))
     document.getElementById('f-controlled').checked = data.controlled_substance == 1;
+
+  if (document.getElementById('f-status'))
+    document.getElementById('f-status').value = data.status ?? 'In Stock';
 }
 
 
