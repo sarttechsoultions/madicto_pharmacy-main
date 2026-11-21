@@ -50,6 +50,14 @@ class Lab extends Model
     }
 
     /**
+     * Relationship: A Lab has many bookings.
+     */
+    public function bookings()
+    {
+        return $this->hasMany(LabTestBooking::class, 'lab_id');
+    }
+
+    /**
      * Scope: Filter active labs only.
      */
     public function scopeActive($query)

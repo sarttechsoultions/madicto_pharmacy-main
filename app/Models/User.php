@@ -73,4 +73,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(MedicineFavourite::class, 'coustmer_id');
     }
+
+    public function labTestBookings()
+    {
+        return $this->hasMany(LabTestBooking::class, 'user_id');
+    }
 }

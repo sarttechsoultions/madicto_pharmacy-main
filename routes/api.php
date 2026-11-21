@@ -32,13 +32,12 @@ Route::get('/trending-medicine', [api::class, 'trendingProducts']);
 Route::get('/deals-of-day', [api::class, 'dealsOfDay']);
 Route::get('/category-is-available', [api::class, 'categoryIsAvailable']);
 
-// Public Mobile APIs for Lab Test Management
-Route::get('/labs', [LabApiController::class, 'getLabs']);
-Route::get('/lab-test-categories', [LabApiController::class, 'getCategories']);
-Route::get('/lab-tests', [LabApiController::class, 'getTests']);
-Route::get('/labs/{id}/tests', [LabApiController::class, 'getTestsByLab']);
-Route::get('/lab-tests/{id}', [LabApiController::class, 'getTestDetails']);
-Route::get('/lab-tests/{id}/price', [LabApiController::class, 'getTestPrice']);
+// Mobile APIs for Lab Test Booking
+Route::get('/lab-test-bookings/available-slots', [LabApiController::class, 'getAvailableSlots']);
+Route::post('/lab-test-bookings', [LabApiController::class, 'createBooking']);
+Route::get('/my-lab-test-bookings', [LabApiController::class, 'getMyBookings']);
+Route::get('/lab-test-bookings/{id}', [LabApiController::class, 'getBookingDetail']);
+Route::post('/lab-test-bookings/{id}/cancel', [LabApiController::class, 'cancelBooking']);
 
 Route::middleware('auth:sanctum')->group(function () {
 

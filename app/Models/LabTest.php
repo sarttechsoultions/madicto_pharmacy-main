@@ -57,6 +57,14 @@ class LabTest extends Model
     }
 
     /**
+     * Relationship: Test has many bookings.
+     */
+    public function bookings()
+    {
+        return $this->hasMany(LabTestBooking::class, 'lab_test_id');
+    }
+
+    /**
      * Scope: Active tests only.
      */
     public function scopeActive($query)

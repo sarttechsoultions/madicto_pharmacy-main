@@ -130,33 +130,27 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/users/{id}', [UserController::class, 'show'])
         ->name('user.show');
 
-    // Lab Management Routes
-    // Dashboard
+    // Lab Test Management (New Booking System)
+    Route::get('/lab/bookings/dashboard', [LabController::class, 'dashboard'])->name('admin.lab.bookings.dashboard');
+    Route::get('/lab/bookings', [LabController::class, 'allBookings'])->name('admin.lab.bookings.index');
+    Route::get('/lab/bookings/calendar', [LabController::class, 'calendar'])->name('admin.lab.bookings.calendar');
+    Route::get('/lab/bookings/reports', [LabController::class, 'reports'])->name('admin.lab.bookings.reports');
+    Route::get('/lab/bookings/{id}', [LabController::class, 'showBooking'])->name('admin.lab.bookings.show');
+    Route::post('/lab/bookings/{id}/status', [LabController::class, 'updateBookingStatus'])->name('admin.lab.bookings.status');
+    Route::post('/lab/bookings/{id}/confirm', [LabController::class, 'confirmBooking'])->name('admin.lab.bookings.confirm');
+    Route::post('/lab/bookings/{id}/cancel', [LabController::class, 'quickCancelBooking'])->name('admin.lab.bookings.cancel');
+    Route::get('/lab/bookings/{id}/details-json', [LabController::class, 'bookingDetails'])->name('admin.lab.bookings.details_json');
+    Route::delete('/lab/bookings/{id}', [LabController::class, 'destroyBooking'])->name('admin.lab.bookings.destroy');
+
+    // Compatibility aliases
     Route::get('/lab/dashboard', [LabController::class, 'dashboard'])->name('admin.lab.dashboard');
-
-    // Lab Setup
-    Route::get('/lab/setup', [LabController::class, 'index'])->name('admin.lab.setup');
-    Route::post('/lab/setup/store', [LabController::class, 'store'])->name('admin.lab.store');
-    Route::put('/lab/setup/{id}', [LabController::class, 'update'])->name('admin.lab.update');
-    Route::delete('/lab/setup/{id}', [LabController::class, 'destroy'])->name('admin.lab.destroy');
-    Route::post('/lab/setup/{id}/toggle-status', [LabController::class, 'toggleStatus'])->name('admin.lab.toggleStatus');
-
-    // Manage Lab Tests
-    Route::get('/lab/tests', [LabTestController::class, 'index'])->name('admin.lab.tests');
-    Route::post('/lab/tests/store', [LabTestController::class, 'store'])->name('admin.lab.tests.store');
-    Route::put('/lab/tests/{id}', [LabTestController::class, 'update'])->name('admin.lab.tests.update');
-    Route::delete('/lab/tests/{id}', [LabTestController::class, 'destroy'])->name('admin.lab.tests.destroy');
-    Route::post('/lab/tests/{id}/toggle-status', [LabTestController::class, 'toggleStatus'])->name('admin.lab.tests.toggleStatus');
-    Route::post('/lab/tests/{id}/pricing', [LabTestController::class, 'updatePricing'])->name('admin.lab.tests.pricing');
-
-    // Lab Test Categories
-    Route::get('/lab/categories', [LabTestCategoryController::class, 'index'])->name('admin.lab.categories');
-    Route::post('/lab/categories/store', [LabTestCategoryController::class, 'store'])->name('admin.lab.categories.store');
-    Route::put('/lab/categories/{id}', [LabTestCategoryController::class, 'update'])->name('admin.lab.categories.update');
-    Route::delete('/lab/categories/{id}', [LabTestCategoryController::class, 'destroy'])->name('admin.lab.categories.destroy');
-    Route::post('/lab/categories/{id}/toggle-status', [LabTestCategoryController::class, 'toggleStatus'])->name('admin.lab.categories.toggleStatus');
-
-    // Lab Test Orders (Prepared for future use)
-    Route::get('/lab/orders', [LabController::class, 'orders'])->name('admin.lab.orders');
+    Route::get('/lab/orders', [LabController::class, 'allBookings'])->name('admin.lab.orders');
 });
+
+// Public Customer Mobile-Friendly Lab Test Browsing & Booking
+Route::get('/lab-tests', [LabController::class, 'customerIndex'])->name('customer.lab.tests');
+Route::post('/lab-test-booking', [LabController::class, 'customerBook'])->name('customer.lab.book');
+Route::get('/lab-test-booking/confirmation/{id}', [LabController::class, 'customerConfirmation'])->name('customer.lab.confirmation');
+Route::get('/my-lab-bookings', [LabController::class, 'customerBookings'])->name('customer.lab.my_bookings');
+
 require __DIR__ . '/auth.php';
