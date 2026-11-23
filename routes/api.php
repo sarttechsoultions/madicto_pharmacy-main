@@ -3,7 +3,9 @@
 use App\Http\Controllers\api\api;
 use App\Http\Controllers\api\auth;
 use App\Http\Controllers\Api\LabApiController;
+use App\Http\Controllers\api\NotificationApiController;
 use Illuminate\Http\Request;
+
 use Illuminate\Support\Facades\Route;
 use App\Models\User;
 use Illuminate\Validation\Rules;
@@ -38,6 +40,50 @@ Route::post('/lab-test-bookings', [LabApiController::class, 'createBooking']);
 Route::get('/my-lab-test-bookings', [LabApiController::class, 'getMyBookings']);
 Route::get('/lab-test-bookings/{id}', [LabApiController::class, 'getBookingDetail']);
 Route::post('/lab-test-bookings/{id}/cancel', [LabApiController::class, 'cancelBooking']);
+
+// =========================================================================
+// 1. MOBILE APP APIS - FCM & NOTIFICATIONS
+// =========================================================================
+// Device Token Registration & Management
+Route::post('/app/fcm/token', [NotificationApiController::class, 'registerToken']);
+Route::post('/fcm/token', [NotificationApiController::class, 'registerToken']);
+Route::post('/save-fcm-token', [NotificationApiController::class, 'registerToken']);
+
+// Device Token Deactivation (Logout)
+Route::post('/app/fcm/token/remove', [NotificationApiController::class, 'removeToken']);
+Route::delete('/app/fcm/token', [NotificationApiController::class, 'removeToken']);
+Route::post('/fcm/token/remove', [NotificationApiController::class, 'removeToken']);
+Route::delete('/fcm/token', [NotificationApiController::class, 'removeToken']);
+
+// Customer Notification Feed & Details
+Route::get('/app/notifications', [NotificationApiController::class, 'getNotifications']);
+Route::get('/notifications', [NotificationApiController::class, 'getNotifications']);
+Route::get('/app/notifications/unread-count', [NotificationApiController::class, 'appUnreadCount']);
+Route::get('/app/notifications/{id}', [NotificationApiController::class, 'appNotificationDetail'])->where('id', '[0-9]+');
+
+// Direct Push Trigger (Service / App Integration)
+Route::post('/fcm/send', [NotificationApiController::class, 'sendPush']);
+Route::post('/notifications/send-push', [NotificationApiController::class, 'sendPush']);
+Route::get('/fcm/status', [NotificationApiController::class, 'getStatus']);
+
+// =========================================================================
+// 2. ADMIN APIS - NOTIFICATIONS & FCM MANAGEMENT
+// =========================================================================
+Route::prefix('admin')->group(function () {
+    Route::get('/notifications', [NotificationApiController::class, 'adminNotifications']);
+    Route::get('/notifications/stats', [NotificationApiController::class, 'adminStats']);
+    Route::post('/notifications/send', [NotificationApiController::class, 'sendPush']);
+    Route::get('/notifications/{id}', [NotificationApiController::class, 'adminShow'])->where('id', '[0-9]+');
+    Route::delete('/notifications/{id}', [NotificationApiController::class, 'adminDestroy'])->where('id', '[0-9]+');
+    Route::post('/notifications/{id}/resend', [NotificationApiController::class, 'adminResend'])->where('id', '[0-9]+');
+
+    // Admin FCM Diagnostics & Device Fleet
+    Route::get('/fcm/status', [NotificationApiController::class, 'getStatus']);
+    Route::get('/fcm/devices', [NotificationApiController::class, 'adminDevices']);
+    Route::post('/fcm/test', [NotificationApiController::class, 'adminTestPush']);
+});
+
+
 
 Route::middleware('auth:sanctum')->group(function () {
 

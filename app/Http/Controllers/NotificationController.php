@@ -51,6 +51,8 @@ class NotificationController extends Controller
             $file->move(public_path('uploads/notification'), $image);
         }
 
+        $totalRecipients = User::count();
+
         $notification = noty::create([
 
             'title' => $request->title,
@@ -63,9 +65,9 @@ class NotificationController extends Controller
 
             'send_to' => 'All Users',
 
-            'status' => 'Sent',
+            'status' => 'Pending',
 
-            'total_users' => User::count(),
+            'total_users' => $totalRecipients,
 
             'success_count' => 0,
 
@@ -73,55 +75,39 @@ class NotificationController extends Controller
 
         ]);
 
-        $success = 0;
-        $failed = 0;
+        $firebaseService = app(\App\Services\FirebaseNotificationService::class);
+        $imageUrl = $image ? asset('uploads/notification/' . $image) : null;
 
-        $tokens = User::whereNotNull('fcm_token')
-            ->pluck('fcm_token')
-            ->toArray();
+        if (!$firebaseService->isConfigured()) {
+            $notification->update([
+                'status' => 'Failed (Missing Firebase Credentials)',
+                'failed_count' => $totalRecipients,
+            ]);
 
-        if (count($tokens) > 0) {
-
-            $messaging = (new Factory)
-                ->withServiceAccount(storage_path('app/firebase/firebase-service-account.json'))
-                ->createMessaging();
-
-            foreach ($tokens as $token) {
-
-                try {
-
-                    $message = CloudMessage::withTarget('token', $token)
-                        ->withNotification(
-                            Notification::create(
-                                $request->title,
-                                $request->message,
-                                $image ? asset('uploads/notification/' . $image) : null
-                            )
-                        );
-
-                    $messaging->send($message);
-
-                    $success++;
-                } catch (\Exception $e) {
-
-                    $failed++;
-                }
-            }
+            return back()->with(
+                'warning',
+                'Notification saved, but push delivery was skipped because Firebase credentials (firebase-service-account.json) are not configured in storage/app/firebase/.'
+            );
         }
 
+        $result = $firebaseService->sendToAll(
+            $request->title,
+            $request->message,
+            ['type' => $request->type ?? 'General'],
+            $imageUrl
+        );
+
         $notification->update([
-
-            'success_count' => $success,
-
-            'failed_count' => $failed,
-
-            'status' => $failed > 0 ? 'Partial Success' : 'Sent'
-
+            'success_count' => $result['success_count'],
+            'failed_count'  => $result['failed_count'],
+            'status'        => $result['failed_count'] > 0
+                ? ($result['success_count'] > 0 ? 'Partial Success' : 'Failed')
+                : 'Sent'
         ]);
 
         return back()->with(
             'success',
-            'Notification Sent Successfully.'
+            "Notification processed: {$result['success_count']} delivered, {$result['failed_count']} failed."
         );
     }
 
@@ -155,41 +141,34 @@ class NotificationController extends Controller
     public function resend($id)
     {
         $notification = noty::findOrFail($id);
+        $firebaseService = app(\App\Services\FirebaseNotificationService::class);
+        $imageUrl = $notification->image ? asset('uploads/notification/' . $notification->image) : null;
 
-        $tokens = User::whereNotNull('fcm_token')
-            ->pluck('fcm_token')
-            ->toArray();
-
-        if (count($tokens) > 0) {
-
-            $messaging = (new Factory)
-                ->withServiceAccount(storage_path('app/firebase/firebase-service-account.json'))
-                ->createMessaging();
-
-            foreach ($tokens as $token) {
-
-                try {
-
-                    $message = CloudMessage::withTarget('token', $token)
-                        ->withNotification(
-                            Notification::create(
-                                $notification->title,
-                                $notification->message,
-                                $notification->image
-                                    ? asset('uploads/notification/' . $notification->image)
-                                    : null
-                            )
-                        );
-
-                    $messaging->send($message);
-                } catch (\Exception $e) {
-                }
-            }
+        if (!$firebaseService->isConfigured()) {
+            return back()->with(
+                'warning',
+                'Firebase credentials (firebase-service-account.json) are not configured in storage/app/firebase/.'
+            );
         }
+
+        $result = $firebaseService->sendToAll(
+            $notification->title,
+            $notification->message,
+            ['type' => $notification->type ?? 'General'],
+            $imageUrl
+        );
+
+        $notification->update([
+            'success_count' => $result['success_count'],
+            'failed_count'  => $result['failed_count'],
+            'status'        => $result['failed_count'] > 0
+                ? ($result['success_count'] > 0 ? 'Partial Success' : 'Sent')
+                : 'Sent'
+        ]);
 
         return back()->with(
             'success',
-            'Notification Sent Again Successfully.'
+            "Notification resent: {$result['success_count']} delivered, {$result['failed_count']} failed."
         );
     }
 }

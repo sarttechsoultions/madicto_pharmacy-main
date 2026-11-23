@@ -200,19 +200,42 @@ class UserController extends Controller
 
     public function saveFcmToken(Request $request)
     {
-        $request->validate([
-            'fcm_token' => 'required|string'
-        ]);
+        $token = $request->fcm_token ?? $request->token;
+        if (!$token) {
+            return response()->json([
+                'success' => false,
+                'status'  => false,
+                'message' => 'fcm_token is required'
+            ], 422);
+        }
 
-        $user = auth()->user();
+        $user = auth('sanctum')->user() ?? auth()->user();
+        $userId = $user?->id ?? ($request->filled('user_id') ? (int)$request->input('user_id') : null);
 
-        $user->update([
-            'fcm_token' => $request->fcm_token
-        ]);
+        $service = app(\App\Services\FirebaseNotificationService::class);
+        $record = $service->registerDeviceToken(
+            $token,
+            $userId,
+            $request->input('device_type', 'android'),
+            $request->input('device_id'),
+            $request->input('device_name'),
+            $request->input('app_version')
+        );
+
+        if ($user) {
+            $user->update([
+                'fcm_token' => $token
+            ]);
+        }
 
         return response()->json([
-            'status' => true,
-            'message' => 'FCM token updated successfully'
+            'status'  => true,
+            'success' => true,
+            'message' => 'FCM token updated successfully',
+            'data'    => [
+                'token_id'    => $record->id,
+                'device_type' => $record->device_type,
+            ]
         ]);
     }
 

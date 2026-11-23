@@ -1,4 +1,8 @@
 *
 !private/
 !public/
+!firebase/
+!firebase/.gitkeep
+!firebase/*.example
 !.gitignore
+

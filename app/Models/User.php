@@ -78,4 +78,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(LabTestBooking::class, 'user_id');
     }
+
+    public function deviceTokens()
+    {
+        return $this->hasMany(DeviceToken::class, 'user_id');
+    }
 }
