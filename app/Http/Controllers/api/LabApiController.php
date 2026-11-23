@@ -317,6 +317,14 @@ class LabApiController extends Controller
                 'created_at'             => (string)$booking->created_at->format('Y-m-d H:i:s'),
             ];
 
+            // Auto-trigger rich FCM Push & Notifications for Admin and Customer
+            try {
+                $booking->test_name = $test->test_name;
+                app(\App\Services\FirebaseNotificationService::class)->notifyNewLabBooking($booking);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("Lab booking notification error: " . $e->getMessage());
+            }
+
             return response()->json([
                 'success' => true,
                 'status'  => true,
@@ -560,6 +568,13 @@ class LabApiController extends Controller
         // Also update mirrored record in lab_test_orders if present
         if (Schema::hasTable('lab_test_orders')) {
             LabTestOrder::where('order_id', $booking->booking_id)->update(['status' => 'cancelled']);
+        }
+
+        // Auto-trigger rich FCM Push & Notifications
+        try {
+            app(\App\Services\FirebaseNotificationService::class)->notifyLabBookingStatusUpdated($booking, 'Cancelled');
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("Lab booking cancellation notification error: " . $e->getMessage());
         }
 
         return response()->json([

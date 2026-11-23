@@ -123,10 +123,17 @@
             </div>
 
             <div class="topbar-actions">
-                <button class="icon-btn" title="Notifications">
+                @php
+                    $adminTodayNotifs = \App\Models\notification::whereIn('target_role', ['admin', 'all'])
+                        ->whereDate('created_at', today())
+                        ->count();
+                @endphp
+                <a href="{{ route('notifications') }}" class="icon-btn" title="Notification Center ({{ $adminTodayNotifs }} today)" style="position:relative; text-decoration:none;">
                     <i class="fa-solid fa-bell"></i>
-                    <span class="notif-dot"></span>
-                </button>
+                    @if($adminTodayNotifs > 0)
+                        <span class="notif-dot" style="position:absolute; top:2px; right:2px; background:#e11d48; color:#fff; font-size:10px; font-weight:700; border-radius:10px; min-width:16px; height:16px; display:inline-flex; align-items:center; justify-content:center; padding:0 3px;">{{ $adminTodayNotifs }}</span>
+                    @endif
+                </a>
                 <button class="icon-btn" title="Help" onclick="showToast('Help docs opening…')">
                     <i class="fa-regular fa-circle-question"></i>
                 </button>

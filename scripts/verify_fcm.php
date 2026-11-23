@@ -306,6 +306,72 @@ assertCheck($adminFcmStatHttp === 200, "GET /api/admin/fcm/status returns HTTP 2
 assertCheck($adminDelHttp === 200, "DELETE /api/admin/notifications/{id} returns HTTP 200 OK");
 assertCheck(noty::find($sampleNoty->id) === null, "Notification verified deleted from database");
 
+// -------------------------------------------------------------
+// SECTION 9: Read/Unread Status & Automated Event Triggers
+// -------------------------------------------------------------
+echo "\n--- SECTION 9: READ/UNREAD STATUS & AUTOMATED EVENT TRIGGERS ---\n";
+
+// 1. Create a targeted notification for testUser
+$userNotif = noty::create([
+    'user_id'      => $testUser->id,
+    'target_role'  => 'user',
+    'title'        => 'Prescription Ready',
+    'message'      => 'Your medicine order is ready for pickup.',
+    'type'         => 'Order',
+    'screen'       => 'OrderTrackingScreen',
+    'reference_id' => 'ORD-9988',
+    'status'       => 'Sent',
+    'is_read'      => false,
+]);
+
+// 2. Customer GET notifications returns enriched fields
+[$userFeedHttp, $userFeedData] = makeApiCall('GET', '/api/notifications', ['user_id' => $testUser->id], [], $testUser);
+assertCheck($userFeedHttp === 200, "GET /api/notifications returns HTTP 200 OK for customer");
+assertCheck(isset($userFeedData['unread_count']), "GET /api/notifications includes unread_count");
+assertCheck(count($userFeedData['data']) > 0, "GET /api/notifications returns customer's notification items");
+
+$firstItem = $userFeedData['data'][0] ?? [];
+assertCheck(array_key_exists('time_ago', $firstItem), "Notification item includes human readable time_ago");
+assertCheck(array_key_exists('screen', $firstItem), "Notification item includes screen navigation target");
+assertCheck(array_key_exists('reference_id', $firstItem), "Notification item includes reference_id");
+
+// 3. Mark single notification as read
+[$readHttp, $readData] = makeApiCall('POST', "/api/notifications/{$userNotif->id}/read", [], [], $testUser);
+assertCheck($readHttp === 200, "POST /api/notifications/{id}/read returns HTTP 200 OK");
+assertCheck(($readData['data']['is_read'] ?? false) === true, "Notification successfully marked is_read = true");
+
+// 4. Mark all as read
+[$markAllHttp, $markAllData] = makeApiCall('POST', '/api/notifications/mark-all-read', [], [], $testUser);
+assertCheck($markAllHttp === 200, "POST /api/notifications/mark-all-read returns HTTP 200 OK");
+
+// 5. Automated Trigger: Direct Customer Registration (POST /api/register)
+$uniqueRegEmail = "new_customer_" . time() . "@medicto.com";
+[$regUserHttp, $regUserData] = makeApiCall('POST', '/api/register', [
+    'name'     => 'Ankit Verma',
+    'email'    => $uniqueRegEmail,
+    'password' => 'secret123',
+    'phone'    => '9876543210',
+]);
+assertCheck($regUserHttp === 201, "POST /api/register creates new customer and returns HTTP 201 Created");
+
+// Check Admin was notified of new user registration
+$adminNewUserNotif = noty::where('type', 'NEW_USER')
+    ->where('target_role', 'admin')
+    ->latest()
+    ->first();
+assertCheck($adminNewUserNotif !== null, "Automated event: Admin notification created for NEW_USER registration");
+assertCheck(str_contains($adminNewUserNotif->message ?? '', $uniqueRegEmail), "Admin notification contains new customer's registered email");
+
+// Check Customer received Welcome notification
+$newUserId = $regUserData['user']['id'] ?? null;
+$welcomeNotif = noty::where('user_id', $newUserId)->where('type', 'WELCOME')->first();
+assertCheck($welcomeNotif !== null, "Automated event: Welcome notification created for newly registered customer");
+
+// 6. Admin API: Filter by NEW_USER type
+[$adminFilteredHttp, $adminFilteredData] = makeApiCall('GET', '/api/admin/notifications', ['type' => 'NEW_USER']);
+assertCheck($adminFilteredHttp === 200, "GET /api/admin/notifications?type=NEW_USER returns HTTP 200 OK");
+assertCheck(count($adminFilteredData['data'] ?? []) > 0, "Admin notifications list correctly filters NEW_USER notifications");
+
 echo "\n=========================================================\n";
 echo "AUDIT SUMMARY: {$pass} checks PASSED, {$fail} checks FAILED.\n";
 if ($fail === 0) {

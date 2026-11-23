@@ -15,6 +15,46 @@ use Illuminate\Support\Str;
 
 class auth extends Controller
 {
+    /**
+     * Customer direct registration
+     * POST /api/register
+     */
+    public function register(Request $request)
+    {
+        $request->validate([
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|email|unique:users,email',
+            'password' => 'required|string|min:6',
+            'phone'    => 'nullable|string|max:20',
+        ]);
+
+        $user = User::create([
+            'name'          => $request->name,
+            'email'         => $request->email,
+            'password'      => Hash::make($request->password),
+            'number'        => $request->phone ?? $request->number,
+            'role'          => '2',
+            'status'        => 'Active',
+            'referral_code' => strtoupper(Str::random(8)),
+        ]);
+
+        $token = $user->createToken('auth-token')->plainTextToken;
+
+        // Auto-trigger FCM & Admin notification for new registration
+        try {
+            app(\App\Services\FirebaseNotificationService::class)->notifyNewUserRegistration($user);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("New user notification error: " . $e->getMessage());
+        }
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Registration successful',
+            'token'   => $token,
+            'user'    => $user,
+        ], 201);
+    }
+
     public function sendOtp(Request $request)
     {
         $request->validate([
@@ -32,6 +72,13 @@ class auth extends Controller
                 'email' => $request->email,
                 'referral_code' => strtoupper(Str::random(8)),
             ]);
+
+            // Auto-trigger FCM & Admin notification for new registration
+            try {
+                app(\App\Services\FirebaseNotificationService::class)->notifyNewUserRegistration($user);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("New user notification error: " . $e->getMessage());
+            }
         }
 
         // OTP generate

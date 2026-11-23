@@ -626,6 +626,13 @@ class api extends Controller
 
             DB::commit();
 
+            // Auto-trigger rich FCM Push & Notifications for Admin and Customer
+            try {
+                app(\App\Services\FirebaseNotificationService::class)->notifyNewOrderPlaced($order, $user);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("Order notification error: " . $e->getMessage());
+            }
+
             return response()->json([
                 'status' => true,
                 'message' => 'Order placed successfully',
@@ -1279,6 +1286,13 @@ class api extends Controller
             $order->delete();
 
             DB::commit();
+
+            // Auto-trigger rich FCM Push & Notifications for Admin and Customer
+            try {
+                app(\App\Services\FirebaseNotificationService::class)->notifyOrderStatusUpdated($order, 'Cancelled');
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("Order cancellation notification error: " . $e->getMessage());
+            }
 
             return response()->json([
                 'status' => true,

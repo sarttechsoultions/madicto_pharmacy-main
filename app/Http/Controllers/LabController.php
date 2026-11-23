@@ -169,6 +169,12 @@ class LabController extends Controller
             LabTestOrder::where('order_id', $booking->booking_id)->update(['status' => 'confirmed']);
         }
 
+        try {
+            app(\App\Services\FirebaseNotificationService::class)->notifyLabBookingStatusUpdated($booking, 'Confirmed');
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("Lab booking status update notification error: " . $e->getMessage());
+        }
+
         return redirect()->back()->with('success', "Booking #{$booking->booking_id} has been Confirmed successfully!");
     }
 
@@ -184,6 +190,12 @@ class LabController extends Controller
 
         if (Schema::hasTable('lab_test_orders')) {
             LabTestOrder::where('order_id', $booking->booking_id)->update(['status' => 'cancelled']);
+        }
+
+        try {
+            app(\App\Services\FirebaseNotificationService::class)->notifyLabBookingStatusUpdated($booking, 'Cancelled');
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("Lab booking cancel notification error: " . $e->getMessage());
         }
 
         return redirect()->back()->with('success', "Booking #{$booking->booking_id} has been Cancelled.");
@@ -224,6 +236,13 @@ class LabController extends Controller
             }
 
             $booking->save();
+
+            // Auto-trigger rich FCM Push & Notifications
+            try {
+                app(\App\Services\FirebaseNotificationService::class)->notifyLabBookingStatusUpdated($booking, $request->status);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("Lab booking status update notification error: " . $e->getMessage());
+            }
 
             // Mirror status into lab_test_orders table if present
             if (Schema::hasTable('lab_test_orders')) {

@@ -68,6 +68,12 @@ class OrdersController extends Controller
 
         $order->save();
 
+        try {
+            app(\App\Services\FirebaseNotificationService::class)->notifyOrderStatusUpdated($order, $request->status);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("Order status update notification error: " . $e->getMessage());
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Order status updated'

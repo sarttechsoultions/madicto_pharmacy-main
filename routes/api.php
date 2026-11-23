@@ -60,6 +60,10 @@ Route::get('/app/notifications', [NotificationApiController::class, 'getNotifica
 Route::get('/notifications', [NotificationApiController::class, 'getNotifications']);
 Route::get('/app/notifications/unread-count', [NotificationApiController::class, 'appUnreadCount']);
 Route::get('/app/notifications/{id}', [NotificationApiController::class, 'appNotificationDetail'])->where('id', '[0-9]+');
+Route::post('/app/notifications/{id}/read', [NotificationApiController::class, 'markAsRead'])->where('id', '[0-9]+');
+Route::post('/notifications/{id}/read', [NotificationApiController::class, 'markAsRead'])->where('id', '[0-9]+');
+Route::post('/app/notifications/mark-all-read', [NotificationApiController::class, 'markAllAsRead']);
+Route::post('/notifications/mark-all-read', [NotificationApiController::class, 'markAllAsRead']);
 
 // Direct Push Trigger (Service / App Integration)
 Route::post('/fcm/send', [NotificationApiController::class, 'sendPush']);

@@ -283,9 +283,14 @@ class NotificationApiController extends Controller
         }
 
         $notyRecord = noty::create([
+            'user_id'       => $request->user_id ? (int)$request->user_id : null,
+            'target_role'   => $request->target_role ?? ($hasUserId ? 'user' : 'all'),
             'title'         => $title,
             'message'       => $message,
             'type'          => $type,
+            'screen'        => $request->screen ?? ($customData['screen'] ?? null),
+            'reference_id'  => $request->reference_id ?? ($customData['reference_id'] ?? null),
+            'data'          => $customData,
             'image'         => $imageFileName,
             'send_to'       => $sendToDescription,
             'status'        => $notificationStatus,
@@ -315,32 +320,125 @@ class NotificationApiController extends Controller
     }
 
     /**
-     * API: List notification history for mobile app
+     * API: List notification history for mobile app (Customer Feed)
      * GET /api/notifications
+     * GET /api/app/notifications
      */
     public function getNotifications(Request $request)
     {
-        $limit = min((int)$request->input('limit', 20), 50);
+        $userId = auth('sanctum')->id()
+            ?? auth()->id()
+            ?? ($request->filled('user_id') ? (int)$request->input('user_id') : null);
 
-        $notifications = noty::latest()
-            ->select('id', 'title', 'message', 'type', 'image', 'status', 'created_at')
-            ->paginate($limit);
+        $query = noty::forCustomerFeed($userId)->latest();
 
-        // Format image URLs
+        if ($request->filled('type') && $request->input('type') !== 'all') {
+            $query->where('type', $request->input('type'));
+        }
+
+        if ($request->has('unread_only') && filter_var($request->input('unread_only'), FILTER_VALIDATE_BOOLEAN)) {
+            $query->where('is_read', false);
+        }
+
+        $limit = min((int)$request->input('limit', 20), 100);
+        $notifications = $query->paginate($limit);
+
+        // Unread badge count
+        $unreadCount = noty::forCustomerFeed($userId)
+            ->where('is_read', false)
+            ->whereIn('status', ['Sent', 'Partial Success', 'Pending'])
+            ->count();
+
+        // Format and enrich each item
         $notifications->getCollection()->transform(function ($item) {
-            $item->image_url = $item->image ? asset('uploads/notification/' . $item->image) : null;
-            return $item;
+            $parsedData = is_array($item->data) ? $item->data : (json_decode($item->data, true) ?? []);
+            return [
+                'id'           => $item->id,
+                'title'        => $item->title,
+                'message'      => $item->message,
+                'type'         => $item->type ?? 'General',
+                'screen'       => $item->screen ?? ($parsedData['screen'] ?? null),
+                'reference_id' => $item->reference_id ?? ($parsedData['reference_id'] ?? null),
+                'data'         => $parsedData,
+                'image_url'    => $item->image ? (str_starts_with($item->image, 'http') ? $item->image : asset('uploads/notification/' . $item->image)) : null,
+                'is_read'      => (bool)$item->is_read,
+                'read_at'      => $item->read_at?->toIso8601String(),
+                'created_at'   => $item->created_at?->toIso8601String(),
+                'time_ago'     => $item->created_at ? $item->created_at->diffForHumans() : 'Just now',
+            ];
         });
+
+        return response()->json([
+            'success'      => true,
+            'status'       => true,
+            'unread_count' => $unreadCount,
+            'data'         => $notifications->items(),
+            'meta'         => [
+                'current_page' => $notifications->currentPage(),
+                'last_page'    => $notifications->lastPage(),
+                'per_page'     => $notifications->perPage(),
+                'total'        => $notifications->total(),
+            ],
+        ], 200);
+    }
+
+    /**
+     * API: Mark single notification as read
+     * POST /api/notifications/{id}/read
+     * POST /api/app/notifications/{id}/read
+     */
+    public function markAsRead(Request $request, $id)
+    {
+        $notification = noty::find($id);
+
+        if (!$notification) {
+            return response()->json([
+                'success' => false,
+                'status'  => false,
+                'message' => 'Notification not found.',
+            ], 404);
+        }
+
+        $notification->update([
+            'is_read' => true,
+            'read_at' => now(),
+        ]);
 
         return response()->json([
             'success' => true,
             'status'  => true,
-            'data'    => $notifications->items(),
-            'meta'    => [
-                'current_page' => $notifications->currentPage(),
-                'last_page'    => $notifications->lastPage(),
-                'total'        => $notifications->total(),
+            'message' => 'Notification marked as read successfully.',
+            'data'    => [
+                'id'      => $notification->id,
+                'is_read' => true,
+                'read_at' => $notification->read_at->toIso8601String(),
             ],
+        ], 200);
+    }
+
+    /**
+     * API: Mark all notifications as read for user
+     * POST /api/notifications/mark-all-read
+     * POST /api/app/notifications/mark-all-read
+     */
+    public function markAllAsRead(Request $request)
+    {
+        $userId = auth('sanctum')->id()
+            ?? auth()->id()
+            ?? ($request->filled('user_id') ? (int)$request->input('user_id') : null);
+
+        $query = noty::forCustomerFeed($userId)->where('is_read', false);
+        $count = $query->count();
+        $query->update([
+            'is_read' => true,
+            'read_at' => now(),
+        ]);
+
+        return response()->json([
+            'success'      => true,
+            'status'       => true,
+            'message'      => "{$count} notifications marked as read.",
+            'marked_count' => $count,
         ], 200);
     }
 
@@ -383,12 +481,17 @@ class NotificationApiController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
                   ->orWhere('message', 'like', "%{$search}%")
-                  ->orWhere('send_to', 'like', "%{$search}%");
+                  ->orWhere('send_to', 'like', "%{$search}%")
+                  ->orWhere('reference_id', 'like', "%{$search}%");
             });
         }
 
         if ($request->filled('type') && $request->type !== 'all') {
             $query->where('type', $request->type);
+        }
+
+        if ($request->filled('target_role') && $request->target_role !== 'all') {
+            $query->where('target_role', $request->target_role);
         }
 
         if ($request->filled('status') && $request->status !== 'all') {
@@ -407,8 +510,26 @@ class NotificationApiController extends Controller
         $notifications = $query->paginate($limit);
 
         $notifications->getCollection()->transform(function ($item) {
-            $item->image_url = $item->image ? asset('uploads/notification/' . $item->image) : null;
-            return $item;
+            $parsedData = is_array($item->data) ? $item->data : (json_decode($item->data, true) ?? []);
+            return [
+                'id'            => $item->id,
+                'user_id'       => $item->user_id,
+                'target_role'   => $item->target_role,
+                'title'         => $item->title,
+                'message'       => $item->message,
+                'type'          => $item->type,
+                'screen'        => $item->screen ?? ($parsedData['screen'] ?? null),
+                'reference_id'  => $item->reference_id ?? ($parsedData['reference_id'] ?? null),
+                'data'          => $parsedData,
+                'send_to'       => $item->send_to,
+                'status'        => $item->status,
+                'total_users'   => $item->total_users,
+                'success_count' => $item->success_count,
+                'failed_count'  => $item->failed_count,
+                'image_url'     => $item->image ? (str_starts_with($item->image, 'http') ? $item->image : asset('uploads/notification/' . $item->image)) : null,
+                'created_at'    => $item->created_at?->toIso8601String(),
+                'time_ago'      => $item->created_at ? $item->created_at->diffForHumans() : 'Just now',
+            ];
         });
 
         return response()->json([

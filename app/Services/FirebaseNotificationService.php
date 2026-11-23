@@ -217,10 +217,21 @@ class FirebaseNotificationService
             ->withApnsConfig($apnsConfig)
             ->withWebPushConfig($webPushConfig);
 
-        $sanitizedData = $this->sanitizeData($data);
-        if (!empty($sanitizedData)) {
-            $message = $message->withData($sanitizedData);
-        }
+        // Auto-enrich data payload with all essential navigation & display fields for mobile apps
+        $enrichedData = array_merge([
+            'title'        => $title,
+            'body'         => $body,
+            'message'      => $body,
+            'image'        => $imageUrl ?? '',
+            'image_url'    => $imageUrl ?? '',
+            'channel_id'   => $channelId,
+            'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+            'sound'        => 'default',
+            'timestamp'    => (string)now()->timestamp,
+        ], $data);
+
+        $sanitizedData = $this->sanitizeData($enrichedData);
+        $message = $message->withData($sanitizedData);
 
         return $message;
     }
@@ -516,5 +527,347 @@ class FirebaseNotificationService
         }
 
         return $record;
+    }
+
+    /**
+     * Send push notification to all Administrators
+     */
+    public function sendToAdmins(
+        string $title,
+        string $body,
+        array $data = [],
+        ?string $imageUrl = null,
+        string $channelId = 'medicto_admin'
+    ): array {
+        $adminUserIds = User::where('role', '1')->orWhere('role', 1)->pluck('id')->toArray();
+
+        $tokens = DeviceToken::whereIn('user_id', $adminUserIds)
+            ->where('is_active', true)
+            ->pluck('fcm_token')
+            ->toArray();
+
+        $directTokens = User::whereIn('id', $adminUserIds)
+            ->whereNotNull('fcm_token')
+            ->pluck('fcm_token')
+            ->toArray();
+
+        $allTokens = array_unique(array_filter(array_merge($tokens, $directTokens)));
+
+        if (empty($allTokens)) {
+            return [
+                'total'                  => 0,
+                'success_count'          => 0,
+                'failed_count'           => 0,
+                'invalid_tokens_removed' => 0,
+                'errors'                 => ['No active admin device tokens found'],
+            ];
+        }
+
+        return $this->sendToTokens($allTokens, $title, $body, $data, $imageUrl, $channelId);
+    }
+
+    /**
+     * Notify Admin of an event (stores record in noties with target_role='admin' & dispatches push)
+     */
+    public function notifyAdmins(
+        string $title,
+        string $body,
+        string $type,
+        ?string $screen = null,
+        ?string $referenceId = null,
+        array $extraData = []
+    ): ?\App\Models\notification {
+        $dataPayload = array_merge([
+            'type'         => $type,
+            'screen'       => $screen ?? 'AdminNotifications',
+            'reference_id' => $referenceId ?? '',
+            'target_role'  => 'admin',
+        ], $extraData);
+
+        $notyRecord = \App\Models\notification::create([
+            'title'        => $title,
+            'message'      => $body,
+            'type'         => $type,
+            'target_role'  => 'admin',
+            'screen'       => $screen,
+            'reference_id' => $referenceId,
+            'data'         => $dataPayload,
+            'send_to'      => 'Admins',
+            'status'       => 'Pending',
+            'total_users'  => User::where('role', '1')->orWhere('role', 1)->count(),
+        ]);
+
+        try {
+            $result = $this->sendToAdmins($title, $body, $dataPayload, null, 'medicto_admin');
+            $status = $result['failed_count'] > 0
+                ? ($result['success_count'] > 0 ? 'Partial Success' : 'Failed')
+                : ($result['success_count'] > 0 ? 'Sent' : 'Pending');
+
+            $notyRecord->update([
+                'status'        => $status,
+                'success_count' => $result['success_count'],
+                'failed_count'  => $result['failed_count'],
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning("notifyAdmins push dispatch warning: " . $e->getMessage());
+        }
+
+        return $notyRecord;
+    }
+
+    /**
+     * Notify Customer of an event (stores record in noties with user_id & dispatches push)
+     */
+    public function notifyCustomer(
+        int $userId,
+        string $title,
+        string $body,
+        string $type,
+        ?string $screen = null,
+        ?string $referenceId = null,
+        array $extraData = [],
+        ?string $imageUrl = null
+    ): ?\App\Models\notification {
+        $dataPayload = array_merge([
+            'type'         => $type,
+            'screen'       => $screen ?? 'NotificationScreen',
+            'reference_id' => $referenceId ?? '',
+            'user_id'      => (string)$userId,
+            'target_role'  => 'user',
+        ], $extraData);
+
+        $notyRecord = \App\Models\notification::create([
+            'user_id'      => $userId,
+            'target_role'  => 'user',
+            'title'        => $title,
+            'message'      => $body,
+            'type'         => $type,
+            'screen'       => $screen,
+            'reference_id' => $referenceId,
+            'data'         => $dataPayload,
+            'image'        => $imageUrl,
+            'send_to'      => "User #{$userId}",
+            'status'       => 'Pending',
+            'total_users'  => 1,
+        ]);
+
+        try {
+            $result = $this->sendToUser($userId, $title, $body, $dataPayload, $imageUrl);
+            $status = $result['failed_count'] > 0
+                ? ($result['success_count'] > 0 ? 'Partial Success' : 'Failed')
+                : ($result['success_count'] > 0 ? 'Sent' : 'Pending');
+
+            $notyRecord->update([
+                'status'        => $status,
+                'success_count' => $result['success_count'],
+                'failed_count'  => $result['failed_count'],
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning("notifyCustomer push dispatch warning: " . $e->getMessage());
+        }
+
+        return $notyRecord;
+    }
+
+    /**
+     * Automatic Event Trigger: New User Registered
+     */
+    public function notifyNewUserRegistration(User $user): void
+    {
+        $userName = $user->name ?: 'Customer';
+        $email = $user->email ?: 'N/A';
+        $phone = $user->number ?: $user->phone ?: 'N/A';
+
+        // 1. Notify Admins
+        $this->notifyAdmins(
+            "New User Registered 👤",
+            "New customer {$userName} ({$email}) has joined Medicto Pharmacy.",
+            "NEW_USER",
+            "UserProfileScreen",
+            (string)$user->id,
+            [
+                'user_id' => (string)$user->id,
+                'name'    => $userName,
+                'email'   => $email,
+                'phone'   => $phone,
+            ]
+        );
+
+        // 2. Welcome notification for the new user
+        $this->notifyCustomer(
+            $user->id,
+            "Welcome to Medicto Pharmacy! 🎉",
+            "Hello {$userName}! Thank you for joining Medicto. Find genuine medicines and book lab tests easily.",
+            "WELCOME",
+            "HomeScreen",
+            (string)$user->id,
+            ['user_id' => (string)$user->id]
+        );
+    }
+
+    /**
+     * Automatic Event Trigger: New Order Placed
+     */
+    public function notifyNewOrderPlaced($order, User $user): void
+    {
+        $orderCode = $order->order_id ?? ('ORD-' . $order->id);
+        $total = number_format((float)($order->total_amount ?? 0), 2);
+        $userName = $user->name ?: 'Customer';
+
+        // 1. Notify Admins
+        $this->notifyAdmins(
+            "New Order Received! 🛒 #{$orderCode}",
+            "Order #{$orderCode} placed by {$userName} for ₹{$total}.",
+            "NEW_ORDER",
+            "AdminOrderDetails",
+            $orderCode,
+            [
+                'order_id'    => $orderCode,
+                'order_db_id' => (string)$order->id,
+                'user_id'     => (string)$user->id,
+                'amount'      => $total,
+            ]
+        );
+
+        // 2. Notify Customer
+        $this->notifyCustomer(
+            $user->id,
+            "Order Placed Successfully! 📦 #{$orderCode}",
+            "Your order for ₹{$total} has been confirmed and is being processed.",
+            "ORDER_PLACED",
+            "OrderTrackingScreen",
+            $orderCode,
+            [
+                'order_id'    => $orderCode,
+                'order_db_id' => (string)$order->id,
+                'amount'      => $total,
+            ]
+        );
+    }
+
+    /**
+     * Automatic Event Trigger: Order Status Changed
+     */
+    public function notifyOrderStatusUpdated($order, string $status): void
+    {
+        $orderCode = $order->order_id ?? ('ORD-' . $order->id);
+        $userId = $order->coustmer_id ?? $order->user_id;
+
+        if (!$userId) {
+            return;
+        }
+
+        $emoji = match (strtolower($status)) {
+            'confirmed'        => '✅',
+            'processing'       => '⏳',
+            'shipped', 'out for delivery' => '🚚',
+            'delivered'        => '🎉',
+            'cancelled'        => '❌',
+            default            => '📋',
+        };
+
+        // Notify Customer
+        $this->notifyCustomer(
+            (int)$userId,
+            "Order {$status} {$emoji} #{$orderCode}",
+            "Your order #{$orderCode} is currently: {$status}.",
+            "ORDER_STATUS_UPDATE",
+            "OrderTrackingScreen",
+            $orderCode,
+            [
+                'order_id'    => $orderCode,
+                'order_db_id' => (string)$order->id,
+                'status'      => $status,
+            ]
+        );
+
+        // If cancelled, also alert admins
+        if (strtolower($status) === 'cancelled') {
+            $this->notifyAdmins(
+                "Order Cancelled ⚠️ #{$orderCode}",
+                "Order #{$orderCode} has been cancelled.",
+                "ORDER_CANCELLED",
+                "AdminOrderDetails",
+                $orderCode,
+                ['order_id' => $orderCode, 'status' => 'Cancelled']
+            );
+        }
+    }
+
+    /**
+     * Automatic Event Trigger: New Lab Test Booking
+     */
+    public function notifyNewLabBooking($booking): void
+    {
+        $bookingId = $booking->booking_id ?? ('LB-' . $booking->id);
+        $testName = $booking->test_name ?? 'Diagnostic Lab Test';
+        $customerName = $booking->customer_name ?? 'Customer';
+        $amount = number_format((float)($booking->total_amount ?? 0), 2);
+        $date = $booking->booking_date ?? date('Y-m-d');
+
+        // 1. Notify Admins
+        $this->notifyAdmins(
+            "New Lab Test Booking! 🧪 #{$bookingId}",
+            "New booking for '{$testName}' by {$customerName} (₹{$amount}) on {$date}.",
+            "NEW_LAB_BOOKING",
+            "AdminLabBookingDetails",
+            $bookingId,
+            [
+                'booking_id'    => $bookingId,
+                'booking_db_id' => (string)$booking->id,
+                'test_name'     => $testName,
+                'customer_name' => $customerName,
+                'booking_date'  => (string)$date,
+            ]
+        );
+
+        // 2. Notify Customer (if linked to registered user)
+        if (!empty($booking->user_id)) {
+            $this->notifyCustomer(
+                (int)$booking->user_id,
+                "Lab Test Booking Confirmed 🩺 #{$bookingId}",
+                "Your test '{$testName}' is scheduled for {$date} ({$booking->booking_time}).",
+                "LAB_BOOKING_CONFIRMED",
+                "LabBookingDetailScreen",
+                $bookingId,
+                [
+                    'booking_id'    => $bookingId,
+                    'booking_db_id' => (string)$booking->id,
+                    'test_name'     => $testName,
+                    'booking_date'  => (string)$date,
+                ]
+            );
+        }
+    }
+
+    /**
+     * Automatic Event Trigger: Lab Test Booking Status Updated
+     */
+    public function notifyLabBookingStatusUpdated($booking, string $status): void
+    {
+        $bookingId = $booking->booking_id ?? ('LB-' . $booking->id);
+
+        if (!empty($booking->user_id)) {
+            $this->notifyCustomer(
+                (int)$booking->user_id,
+                "Lab Test Update: {$status} 🔬 #{$bookingId}",
+                "Your lab test booking #{$bookingId} status is now {$status}.",
+                "LAB_BOOKING_UPDATE",
+                "LabBookingDetailScreen",
+                $bookingId,
+                ['booking_id' => $bookingId, 'status' => $status]
+            );
+        }
+
+        if (strtolower($status) === 'cancelled') {
+            $this->notifyAdmins(
+                "Lab Booking Cancelled ⚠️ #{$bookingId}",
+                "Booking #{$bookingId} for {$booking->customer_name} was cancelled.",
+                "LAB_BOOKING_CANCELLED",
+                "AdminLabBookingDetails",
+                $bookingId,
+                ['booking_id' => $bookingId, 'status' => 'Cancelled']
+            );
+        }
     }
 }
