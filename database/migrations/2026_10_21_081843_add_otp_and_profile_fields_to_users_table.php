@@ -12,14 +12,30 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('name')->nullable()->change();
-            $table->string('password')->nullable()->change();
-            $table->string('referral_code')->nullable()->after('email');
-            $table->string('otp')->nullable()->after('referral_code');
-            $table->timestamp('otp_expires_at')->nullable()->after('otp');
-            $table->string('role')->default('2')->after('otp_expires_at');
-            $table->string('status')->default('Active')->after('role');
-            $table->string('profile_img')->nullable()->after('status');
+            if (Schema::hasColumn('users', 'name')) {
+                $table->string('name')->nullable()->change();
+            }
+            if (Schema::hasColumn('users', 'password')) {
+                $table->string('password')->nullable()->change();
+            }
+            if (!Schema::hasColumn('users', 'referral_code')) {
+                $table->string('referral_code')->nullable()->after('email');
+            }
+            if (!Schema::hasColumn('users', 'otp')) {
+                $table->string('otp')->nullable()->after('referral_code');
+            }
+            if (!Schema::hasColumn('users', 'otp_expires_at')) {
+                $table->timestamp('otp_expires_at')->nullable()->after('otp');
+            }
+            if (!Schema::hasColumn('users', 'role')) {
+                $table->string('role')->default('2')->after('otp_expires_at');
+            }
+            if (!Schema::hasColumn('users', 'status')) {
+                $table->string('status')->default('Active')->after('role');
+            }
+            if (!Schema::hasColumn('users', 'profile_img')) {
+                $table->string('profile_img')->nullable()->after('status');
+            }
         });
     }
 

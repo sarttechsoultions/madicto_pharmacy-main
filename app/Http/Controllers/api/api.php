@@ -404,6 +404,14 @@ class api extends Controller
             'medicine_id' => 'nullable|integer',
             'quantity' => 'nullable|integer|min:1',
             'wallet_amount' => 'nullable|numeric|min:0',
+            'items' => 'nullable|array',
+            'items.*.medicine_id' => 'nullable|integer',
+            'items.*.id' => 'nullable|integer',
+            'items.*.quantity' => 'nullable|integer|min:1',
+            'products' => 'nullable|array',
+            'products.*.medicine_id' => 'nullable|integer',
+            'products.*.id' => 'nullable|integer',
+            'products.*.quantity' => 'nullable|integer|min:1',
         ]);
 
         DB::beginTransaction();
@@ -430,11 +438,77 @@ class api extends Controller
             $subtotal = 0;
 
             /*
-        |--------------------------------------------------------------------------
-        | Buy Now Flow
-        |--------------------------------------------------------------------------
-        */
-            if ($request->filled('medicine_id')) {
+            |--------------------------------------------------------------------------
+            | 1. Direct Multi-Item Array Flow (items or products payload)
+            |--------------------------------------------------------------------------
+            */
+            if ($request->filled('items') && is_array($request->items) && count($request->items) > 0) {
+                foreach ($request->items as $reqItem) {
+                    $medId = $reqItem['medicine_id'] ?? $reqItem['id'] ?? null;
+                    $qty = (int)($reqItem['quantity'] ?? 1);
+                    if (!$medId) continue;
+
+                    $medicine = MedicineModel::lockForUpdate()->find($medId);
+                    if (!$medicine) {
+                        return response()->json([
+                            'status' => false,
+                            'message' => "Medicine ID {$medId} not found"
+                        ], 404);
+                    }
+                    if ($medicine->quantity < $qty) {
+                        return response()->json([
+                            'status' => false,
+                            'message' => $medicine->name . ' quantity not available'
+                        ], 422);
+                    }
+                    $lineTotal = $medicine->price * $qty;
+                    $subtotal += $lineTotal;
+                    $items->push([
+                        'medicine_id'    => $medicine->id,
+                        'medicine_name'  => $medicine->name,
+                        'medicine_image' => $medicine->image,
+                        'price'          => $medicine->price,
+                        'quantity'       => $qty,
+                        'subtotal'       => $lineTotal,
+                    ]);
+                }
+            } elseif ($request->filled('products') && is_array($request->products) && count($request->products) > 0) {
+                foreach ($request->products as $reqItem) {
+                    $medId = $reqItem['medicine_id'] ?? $reqItem['id'] ?? null;
+                    $qty = (int)($reqItem['quantity'] ?? 1);
+                    if (!$medId) continue;
+
+                    $medicine = MedicineModel::lockForUpdate()->find($medId);
+                    if (!$medicine) {
+                        return response()->json([
+                            'status' => false,
+                            'message' => "Medicine ID {$medId} not found"
+                        ], 404);
+                    }
+                    if ($medicine->quantity < $qty) {
+                        return response()->json([
+                            'status' => false,
+                            'message' => $medicine->name . ' quantity not available'
+                        ], 422);
+                    }
+                    $lineTotal = $medicine->price * $qty;
+                    $subtotal += $lineTotal;
+                    $items->push([
+                        'medicine_id'    => $medicine->id,
+                        'medicine_name'  => $medicine->name,
+                        'medicine_image' => $medicine->image,
+                        'price'          => $medicine->price,
+                        'quantity'       => $qty,
+                        'subtotal'       => $lineTotal,
+                    ]);
+                }
+            }
+            /*
+            |--------------------------------------------------------------------------
+            | 2. Buy Now Flow (Single product)
+            |--------------------------------------------------------------------------
+            */
+            elseif ($request->filled('medicine_id')) {
 
                 $medicine = MedicineModel::find($request->medicine_id);
 
@@ -467,10 +541,10 @@ class api extends Controller
             }
 
             /*
-        |--------------------------------------------------------------------------
-        | Cart Checkout Flow
-        |--------------------------------------------------------------------------
-        */ else {
+            |--------------------------------------------------------------------------
+            | 3. Cart Checkout Flow (Database CartModel items)
+            |--------------------------------------------------------------------------
+            */ else {
 
                 $cartItems = CartModel::with('medicine')
                     ->where('coustmer_id', auth()->id())
@@ -564,6 +638,7 @@ class api extends Controller
             $order = OrdersModel::create([
                 'order_id' => $orderCode,
                 'coustmer_id' => auth()->id(),
+                'user_id' => auth()->id(),
 
                 'delivery_address_label' => $address->address_label,
                 'delivery_phone_number' => $address->phone_number,
@@ -594,6 +669,7 @@ class api extends Controller
                     'price' => $item['price'],
                     'quantity' => $item['quantity'],
                     'subtotal' => $item['subtotal'],
+                    'total' => $item['subtotal'],
                 ]);
 
                 $medicine = MedicineModel::find($item['medicine_id']);
@@ -615,7 +691,7 @@ class api extends Controller
                 }
             }
 
-            // Cart clear only when cart checkout
+            // Cart clear only when cart checkout or direct multi-item checkout
             if (!$request->filled('medicine_id')) {
 
                 CartModel::where(
@@ -626,8 +702,9 @@ class api extends Controller
 
             DB::commit();
 
-            // Auto-trigger rich FCM Push & Notifications for Admin and Customer
+            // Auto-trigger rich FCM Push & Notifications for Admin and Customer (Strictly ONCE per order)
             try {
+                $order->loadMissing('items');
                 app(\App\Services\FirebaseNotificationService::class)->notifyNewOrderPlaced($order, $user);
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::warning("Order notification error: " . $e->getMessage());
@@ -637,7 +714,9 @@ class api extends Controller
                 'status' => true,
                 'message' => 'Order placed successfully',
                 'order_id' => $orderCode,
-                'order_db_id' => $order->id
+                'order_db_id' => $order->id,
+                'total_products' => $items->count(),
+                'total_amount' => $finalAmount
             ]);
         } catch (\Exception $e) {
 

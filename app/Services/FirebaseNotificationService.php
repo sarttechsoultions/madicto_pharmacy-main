@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\DeviceToken;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Kreait\Firebase\Factory;
@@ -568,6 +569,7 @@ class FirebaseNotificationService
 
     /**
      * Notify Admin of an event (stores record in noties with target_role='admin' & dispatches push)
+     * Includes deduplication guard by type + reference_id.
      */
     public function notifyAdmins(
         string $title,
@@ -577,6 +579,20 @@ class FirebaseNotificationService
         ?string $referenceId = null,
         array $extraData = []
     ): ?\App\Models\notification {
+        // Deduplication Guard: Suppress duplicate admin notifications for same reference within 10 minutes
+        if (!empty($referenceId)) {
+            $existing = \App\Models\notification::where('target_role', 'admin')
+                ->where('type', $type)
+                ->where('reference_id', (string)$referenceId)
+                ->where('created_at', '>=', now()->subMinutes(10))
+                ->first();
+
+            if ($existing) {
+                Log::info("notifyAdmins: Duplicate notification suppressed for type={$type}, reference_id={$referenceId}");
+                return $existing;
+            }
+        }
+
         $dataPayload = array_merge([
             'type'         => $type,
             'screen'       => $screen ?? 'AdminNotifications',
@@ -617,6 +633,7 @@ class FirebaseNotificationService
 
     /**
      * Notify Customer of an event (stores record in noties with user_id & dispatches push)
+     * Includes deduplication guard by user_id + type + reference_id.
      */
     public function notifyCustomer(
         int $userId,
@@ -628,6 +645,20 @@ class FirebaseNotificationService
         array $extraData = [],
         ?string $imageUrl = null
     ): ?\App\Models\notification {
+        // Deduplication Guard: Suppress duplicate customer notifications for same reference within 10 minutes
+        if (!empty($referenceId)) {
+            $existing = \App\Models\notification::where('user_id', $userId)
+                ->where('type', $type)
+                ->where('reference_id', (string)$referenceId)
+                ->where('created_at', '>=', now()->subMinutes(10))
+                ->first();
+
+            if ($existing) {
+                Log::info("notifyCustomer: Duplicate notification suppressed for user={$userId}, type={$type}, reference_id={$referenceId}");
+                return $existing;
+            }
+        }
+
         $dataPayload = array_merge([
             'type'         => $type,
             'screen'       => $screen ?? 'NotificationScreen',
@@ -707,42 +738,101 @@ class FirebaseNotificationService
 
     /**
      * Automatic Event Trigger: New Order Placed
+     * Strict Rule: ONE Checkout = ONE Order = ONE Admin Notification + ONE Customer Notification.
+     * Contains Order ID, Customer Name, and Total Number of Products.
+     * Prevents duplicate notifications using unique order identifier and mutex lock.
      */
-    public function notifyNewOrderPlaced($order, User $user): void
+    public function notifyNewOrderPlaced($order, User $user): array
     {
-        $orderCode = $order->order_id ?? ('ORD-' . $order->id);
+        $orderCode = (string)($order->order_id ?? ('ORD-' . $order->id));
+        $orderDbId = (string)$order->id;
         $total = number_format((float)($order->total_amount ?? 0), 2);
-        $userName = $user->name ?: 'Customer';
+        $userName = trim($user->name ?: 'Customer');
 
-        // 1. Notify Admins
-        $this->notifyAdmins(
-            "New Order Received! 🛒 #{$orderCode}",
-            "Order #{$orderCode} placed by {$userName} for ₹{$total}.",
-            "NEW_ORDER",
-            "AdminOrderDetails",
-            $orderCode,
-            [
-                'order_id'    => $orderCode,
-                'order_db_id' => (string)$order->id,
-                'user_id'     => (string)$user->id,
-                'amount'      => $total,
-            ]
-        );
+        // Ensure order items are loaded to calculate accurate product count
+        if (!$order->relationLoaded('items')) {
+            $order->load('items');
+        }
 
-        // 2. Notify Customer
-        $this->notifyCustomer(
-            $user->id,
-            "Order Placed Successfully! 📦 #{$orderCode}",
-            "Your order for ₹{$total} has been confirmed and is being processed.",
-            "ORDER_PLACED",
-            "OrderTrackingScreen",
-            $orderCode,
-            [
-                'order_id'    => $orderCode,
-                'order_db_id' => (string)$order->id,
-                'amount'      => $total,
-            ]
-        );
+        $productCount = ($order->items && $order->items->count() > 0) ? $order->items->count() : 1;
+        $totalQuantity = ($order->items && $order->items->count() > 0) ? (int)$order->items->sum('quantity') : 1;
+        $productText = $productCount === 1 ? '1 product' : "{$productCount} products";
+
+        // Idempotency check: Use atomic Cache lock to prevent concurrent triggers
+        $lockKey = "notify_order_lock_{$orderDbId}";
+        $lock = Cache::lock($lockKey, 10);
+
+        if (!$lock->get()) {
+            Log::info("notifyNewOrderPlaced: Concurrent execution blocked for order {$orderCode}");
+            return ['admin' => null, 'customer' => null];
+        }
+
+        try {
+            // Deduplication: Check if admin notification already exists for this order
+            $adminExists = \App\Models\notification::where('target_role', 'admin')
+                ->where('type', 'NEW_ORDER')
+                ->where('reference_id', $orderCode)
+                ->exists();
+
+            $adminNoty = null;
+            if (!$adminExists) {
+                // 1. Notify Admins (Only ONCE per order)
+                $adminNoty = $this->notifyAdmins(
+                    "New Order Received! 🛒 #{$orderCode}",
+                    "Order #{$orderCode} placed by {$userName} ({$productText}, Total: ₹{$total}).",
+                    "NEW_ORDER",
+                    "AdminOrderDetails",
+                    $orderCode,
+                    [
+                        'order_id'       => $orderCode,
+                        'order_db_id'    => $orderDbId,
+                        'user_id'        => (string)$user->id,
+                        'customer_name'  => $userName,
+                        'total_products' => (string)$productCount,
+                        'total_quantity' => (string)$totalQuantity,
+                        'amount'         => $total,
+                    ]
+                );
+            } else {
+                Log::info("Skipped duplicate admin notification for order #{$orderCode}");
+            }
+
+            // Deduplication: Check if customer notification already exists for this order
+            $customerExists = \App\Models\notification::where('user_id', $user->id)
+                ->where('type', 'ORDER_PLACED')
+                ->where('reference_id', $orderCode)
+                ->exists();
+
+            $customerNoty = null;
+            if (!$customerExists) {
+                // 2. Notify Customer (Only ONCE per order)
+                $customerNoty = $this->notifyCustomer(
+                    $user->id,
+                    "Order Placed Successfully! 📦 #{$orderCode}",
+                    "Thank you {$userName}! Your order #{$orderCode} for {$productText} (₹{$total}) has been confirmed and is being processed.",
+                    "ORDER_PLACED",
+                    "OrderTrackingScreen",
+                    $orderCode,
+                    [
+                        'order_id'       => $orderCode,
+                        'order_db_id'    => $orderDbId,
+                        'customer_name'  => $userName,
+                        'total_products' => (string)$productCount,
+                        'total_quantity' => (string)$totalQuantity,
+                        'amount'         => $total,
+                    ]
+                );
+            } else {
+                Log::info("Skipped duplicate customer notification for order #{$orderCode}");
+            }
+
+            return [
+                'admin'    => $adminNoty,
+                'customer' => $customerNoty,
+            ];
+        } finally {
+            optional($lock)->release();
+        }
     }
 
     /**
