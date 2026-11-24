@@ -14,6 +14,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\LabController;
 use App\Http\Controllers\LabTestController;
 use App\Http\Controllers\LabTestCategoryController;
+use App\Http\Controllers\Admin\RazorpayAdminController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -62,6 +63,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/order/{id}/details', [OrdersController::class, 'details'])->name('order.details');
     Route::delete('/orders/{id}', [OrdersController::class, 'destroy'])->name('orders.destroy');
     Route::get('/orders/{id}/invoice', [OrdersController::class, 'invoice'])->name('orders.invoice');
+
+    // Admin Razorpay Payments & Gateway Management
+    Route::get('/admin/payments', [RazorpayAdminController::class, 'index'])->name('admin.payments.index');
+    Route::get('/admin/payments/settings', [RazorpayAdminController::class, 'settings'])->name('admin.payments.settings');
+    Route::post('/admin/payments/settings', [RazorpayAdminController::class, 'updateSettings'])->name('admin.payments.update_settings');
+    Route::get('/admin/payments/test-connection', [RazorpayAdminController::class, 'testConnection'])->name('admin.payments.test_connection');
+    Route::get('/admin/payments/{id}', [RazorpayAdminController::class, 'show'])->name('admin.payments.show');
+    Route::post('/admin/payments/{id}/sync', [RazorpayAdminController::class, 'sync'])->name('admin.payments.sync');
+    Route::post('/admin/payments/{id}/refund', [RazorpayAdminController::class, 'refund'])->name('admin.payments.refund');
 
     // User Orders Route
     Route::get('/users', [UserController::class, 'index'])->name('user.index');

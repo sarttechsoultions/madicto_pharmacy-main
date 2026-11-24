@@ -73,7 +73,7 @@
             <a class="nav-item" href="#">
                 <i class="fa-solid fa-boxes-stacked"></i><span>Inventory</span>
             </a>
-            <a class="nav-item" href="#">
+            <a class="nav-item {{ request()->routeIs('admin.payments.*') ? 'active' : '' }}" href="{{ route('admin.payments.index') }}">
                 <i class="fa-solid fa-credit-card"></i><span>Payments</span>
             </a>
             <a class="nav-item {{ request()->routeIs('banner.index') ? 'active' : '' }}" href="{{ route('banner.index') }}">

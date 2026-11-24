@@ -4,6 +4,8 @@ use App\Http\Controllers\api\api;
 use App\Http\Controllers\api\auth;
 use App\Http\Controllers\Api\LabApiController;
 use App\Http\Controllers\api\NotificationApiController;
+use App\Http\Controllers\api\RazorpayApiController;
+use App\Http\Controllers\Admin\RazorpayAdminController;
 use Illuminate\Http\Request;
 
 use Illuminate\Support\Facades\Route;
@@ -40,6 +42,13 @@ Route::post('/lab-test-bookings', [LabApiController::class, 'createBooking']);
 Route::get('/my-lab-test-bookings', [LabApiController::class, 'getMyBookings']);
 Route::get('/lab-test-bookings/{id}', [LabApiController::class, 'getBookingDetail']);
 Route::post('/lab-test-bookings/{id}/cancel', [LabApiController::class, 'cancelBooking']);
+
+// =========================================================================
+// RAZORPAY PAYMENT GATEWAY APIS (Mobile App & Webhook)
+// =========================================================================
+Route::get('/razorpay/config', [RazorpayApiController::class, 'getConfig']);
+Route::get('/payment/razorpay/config', [RazorpayApiController::class, 'getConfig']);
+Route::post('/razorpay/webhook', [RazorpayApiController::class, 'handleWebhook']);
 
 // =========================================================================
 // 1. MOBILE APP APIS - FCM & NOTIFICATIONS
@@ -143,6 +152,17 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/medicine-favourite', [api::class, 'toggleFavourite']);
     Route::get('/favourite-medicines', [api::class, 'favouriteMedicines']);
+
+    // Razorpay Mobile Checkout & Payment Verification APIs
+    Route::post('/razorpay/create-order', [RazorpayApiController::class, 'createOrder']);
+    Route::post('/payment/razorpay/create-order', [RazorpayApiController::class, 'createOrder']);
+    Route::post('/razorpay/verify-payment', [RazorpayApiController::class, 'verifyPayment']);
+    Route::post('/razorpay/verify', [RazorpayApiController::class, 'verifyPayment']);
+    Route::post('/payment/razorpay/verify', [RazorpayApiController::class, 'verifyPayment']);
+    Route::post('/razorpay/payment-failed', [RazorpayApiController::class, 'recordFailure']);
+    Route::post('/payment/razorpay/failed', [RazorpayApiController::class, 'recordFailure']);
+    Route::get('/payment/history', [RazorpayApiController::class, 'getHistory']);
+    Route::get('/payment/{id}', [RazorpayApiController::class, 'getPaymentDetail']);
 
     // Admin / Management Medicine APIs
     Route::post('/medicines/create', [api::class, 'storeMedicine']);

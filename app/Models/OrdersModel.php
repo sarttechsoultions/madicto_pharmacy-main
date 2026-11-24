@@ -26,6 +26,11 @@ class OrdersModel extends Model
         'discount',
         'total_amount',
 
+        'payment_status',
+        'payment_method',
+        'razorpay_order_id',
+        'razorpay_payment_id',
+
         'status',
 
         'ordered_at',
