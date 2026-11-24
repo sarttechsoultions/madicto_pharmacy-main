@@ -221,13 +221,7 @@
         </div>
 
         <div class="um-footer">
-            <div>Showing {{ $user->firstItem() }} to {{ $user->lastItem() }} of {{ $user->total() }} users</div>
-
-            <div class="um-pagination">
-                {{ $user->links() }}
-
-            </div>
-
+            {{ $user->appends(request()->query())->links() }}
         </div>
 
     </div>

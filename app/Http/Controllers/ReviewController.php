@@ -9,7 +9,9 @@ class ReviewController extends Controller
 {
     public function index()
     {
-        $reviews = ReviewModel::all();
+        $reviews = ReviewModel::with(['coustmer', 'medicine'])
+            ->latest()
+            ->paginate(15);
         return view('admin.reviews', compact('reviews'));
     }
 }

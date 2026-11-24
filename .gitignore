@@ -34,3 +34,7 @@ auth.json
 !/storage/app/firebase/*.example
 !/storage/app/firebase/.gitkeep
 
+# Uploaded notification attachments
+/public/uploads/notification/*
+!/public/uploads/notification/.gitkeep
+

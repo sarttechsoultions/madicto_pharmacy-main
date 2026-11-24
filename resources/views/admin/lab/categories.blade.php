@@ -172,11 +172,9 @@
             </table>
         </div>
 
-        @if($categories->hasPages())
-        <div style="padding:16px 20px;border-top:1px solid #e5e7eb;">
-            {{ $categories->links() }}
+        <div class="table-footer" style="padding:14px 20px;border-top:1px solid #e5e7eb;background:#fff;">
+            {{ $categories->appends(request()->query())->links() }}
         </div>
-        @endif
     </div>
 
     <!-- ADD CATEGORY MODAL -->

@@ -11,7 +11,7 @@ class CoustmerMedicineController extends Controller
 {
     public function index()
     {
-        $cstmedcine = cstmodel::with('coustmer', 'medicine')->get();
+        $cstmedcine = cstmodel::with('coustmer', 'medicine')->latest()->paginate(15);
         $medicine = medicineModel::all();
         $cartItems = CartModel::all();
         return view('admin.coustmer-medicine', compact('cstmedcine', 'medicine', 'cartItems'));

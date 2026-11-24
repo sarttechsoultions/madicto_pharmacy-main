@@ -222,7 +222,7 @@
 
     <div class="od-pagination">
 
-      {{ $orders->links()  }}
+      {{ $orders->appends(request()->query())->links() }}
 
     </div>
 

@@ -203,6 +203,9 @@
                 </tbody>
             </table>
         </div>
+        <div class="table-footer">
+            {{ $notifications->appends(request()->query())->links() }}
+        </div>
     </div>
 
     <!-- Send Notification Modal -->

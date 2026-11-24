@@ -443,6 +443,86 @@ class NotificationApiController extends Controller
     }
 
     /**
+     * API: Delete single notification
+     * DELETE /api/app/notifications/{id}
+     * POST   /api/app/notifications/{id}/delete
+     * POST   /api/app/notifications/delete
+     * DELETE /api/notifications/{id}
+     * POST   /api/notifications/{id}/delete
+     * POST   /api/notifications/delete
+     */
+    public function deleteNotification(Request $request, $id = null)
+    {
+        $notificationId = $id ?? $request->input('id') ?? $request->input('notification_id');
+
+        if (!$notificationId) {
+            return response()->json([
+                'success' => false,
+                'status'  => false,
+                'message' => 'Notification ID is required.',
+            ], 422);
+        }
+
+        $notification = noty::find($notificationId);
+
+        if (!$notification) {
+            return response()->json([
+                'success' => false,
+                'status'  => false,
+                'message' => 'Notification not found.',
+            ], 404);
+        }
+
+        // Clean up attached image if present
+        if ($notification->image && File::exists(public_path('uploads/notification/' . $notification->image))) {
+            File::delete(public_path('uploads/notification/' . $notification->image));
+        }
+
+        $notification->delete();
+
+        return response()->json([
+            'success'    => true,
+            'status'     => true,
+            'message'    => 'Notification deleted successfully.',
+            'deleted_id' => (int)$notificationId,
+        ], 200);
+    }
+
+    /**
+     * API: Clear/Delete all notifications for customer feed
+     * DELETE /api/app/notifications
+     * POST   /api/app/notifications/clear-all
+     * DELETE /api/notifications
+     * POST   /api/notifications/clear-all
+     */
+    public function clearAllNotifications(Request $request)
+    {
+        $userId = auth('sanctum')->id()
+            ?? auth()->id()
+            ?? ($request->filled('user_id') ? (int)$request->input('user_id') : null);
+
+        $query = noty::forCustomerFeed($userId);
+        $count = $query->count();
+
+        // Delete images if present
+        $notificationsWithImages = (clone $query)->whereNotNull('image')->get();
+        foreach ($notificationsWithImages as $n) {
+            if ($n->image && File::exists(public_path('uploads/notification/' . $n->image))) {
+                File::delete(public_path('uploads/notification/' . $n->image));
+            }
+        }
+
+        $query->delete();
+
+        return response()->json([
+            'success'       => true,
+            'status'        => true,
+            'message'       => "{$count} notifications cleared successfully.",
+            'deleted_count' => $count,
+        ], 200);
+    }
+
+    /**
      * API: Diagnostic status of Firebase configuration
      * GET /api/fcm/status
      */
@@ -619,10 +699,22 @@ class NotificationApiController extends Controller
     /**
      * Admin API: Delete notification
      * DELETE /api/admin/notifications/{id}
+     * POST   /api/admin/notifications/{id}/delete
+     * POST   /api/admin/notifications/delete
      */
-    public function adminDestroy($id)
+    public function adminDestroy(Request $request = null, $id = null)
     {
-        $notification = noty::find($id);
+        $notificationId = $id ?? ($request ? ($request->input('id') ?? $request->input('notification_id')) : null);
+
+        if (!$notificationId) {
+            return response()->json([
+                'success' => false,
+                'status'  => false,
+                'message' => 'Notification ID is required.',
+            ], 422);
+        }
+
+        $notification = noty::find($notificationId);
 
         if (!$notification) {
             return response()->json([
@@ -639,9 +731,10 @@ class NotificationApiController extends Controller
         $notification->delete();
 
         return response()->json([
-            'success' => true,
-            'status'  => true,
-            'message' => 'Notification deleted successfully.',
+            'success'    => true,
+            'status'     => true,
+            'message'    => 'Notification deleted successfully.',
+            'deleted_id' => (int)$notificationId,
         ], 200);
     }
 

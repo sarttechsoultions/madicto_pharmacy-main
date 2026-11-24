@@ -147,6 +147,9 @@
                 @endforeach
             </tbody>
         </table>
+        <div class="table-footer">
+            {{ $categories->appends(request()->query())->links() }}
+        </div>
     </div>
 
 </main>

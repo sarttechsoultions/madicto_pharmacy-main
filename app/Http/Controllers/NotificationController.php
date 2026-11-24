@@ -80,7 +80,7 @@ class NotificationController extends Controller
 
         if (!$firebaseService->isConfigured()) {
             $notification->update([
-                'status' => 'Failed (Missing Firebase Credentials)',
+                'status' => 'Failed',
                 'failed_count' => $totalRecipients,
             ]);
 

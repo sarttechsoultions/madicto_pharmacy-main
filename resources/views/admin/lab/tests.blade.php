@@ -189,11 +189,9 @@
             </table>
         </div>
 
-        @if($tests->hasPages())
-        <div style="padding:16px 20px;border-top:1px solid #e5e7eb;">
-            {{ $tests->links() }}
+        <div class="table-footer" style="padding:14px 20px;border-top:1px solid #e5e7eb;background:#fff;">
+            {{ $tests->appends(request()->query())->links() }}
         </div>
-        @endif
     </div>
 
     <!-- ADD TEST MODAL -->

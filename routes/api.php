@@ -65,6 +65,19 @@ Route::post('/notifications/{id}/read', [NotificationApiController::class, 'mark
 Route::post('/app/notifications/mark-all-read', [NotificationApiController::class, 'markAllAsRead']);
 Route::post('/notifications/mark-all-read', [NotificationApiController::class, 'markAllAsRead']);
 
+// Notification Deletion & Clearing APIs
+Route::delete('/app/notifications/{id}', [NotificationApiController::class, 'deleteNotification'])->where('id', '[0-9]+');
+Route::post('/app/notifications/{id}/delete', [NotificationApiController::class, 'deleteNotification'])->where('id', '[0-9]+');
+Route::post('/app/notifications/delete', [NotificationApiController::class, 'deleteNotification']);
+Route::delete('/app/notifications', [NotificationApiController::class, 'clearAllNotifications']);
+Route::post('/app/notifications/clear-all', [NotificationApiController::class, 'clearAllNotifications']);
+
+Route::delete('/notifications/{id}', [NotificationApiController::class, 'deleteNotification'])->where('id', '[0-9]+');
+Route::post('/notifications/{id}/delete', [NotificationApiController::class, 'deleteNotification'])->where('id', '[0-9]+');
+Route::post('/notifications/delete', [NotificationApiController::class, 'deleteNotification']);
+Route::delete('/notifications', [NotificationApiController::class, 'clearAllNotifications']);
+Route::post('/notifications/clear-all', [NotificationApiController::class, 'clearAllNotifications']);
+
 // Direct Push Trigger (Service / App Integration)
 Route::post('/fcm/send', [NotificationApiController::class, 'sendPush']);
 Route::post('/notifications/send-push', [NotificationApiController::class, 'sendPush']);
@@ -79,6 +92,10 @@ Route::prefix('admin')->group(function () {
     Route::post('/notifications/send', [NotificationApiController::class, 'sendPush']);
     Route::get('/notifications/{id}', [NotificationApiController::class, 'adminShow'])->where('id', '[0-9]+');
     Route::delete('/notifications/{id}', [NotificationApiController::class, 'adminDestroy'])->where('id', '[0-9]+');
+    Route::post('/notifications/{id}/delete', [NotificationApiController::class, 'adminDestroy'])->where('id', '[0-9]+');
+    Route::post('/notifications/delete', [NotificationApiController::class, 'adminDestroy']);
+    Route::delete('/notifications', [NotificationApiController::class, 'clearAllNotifications']);
+    Route::post('/notifications/clear-all', [NotificationApiController::class, 'clearAllNotifications']);
     Route::post('/notifications/{id}/resend', [NotificationApiController::class, 'adminResend'])->where('id', '[0-9]+');
 
     // Admin FCM Diagnostics & Device Fleet

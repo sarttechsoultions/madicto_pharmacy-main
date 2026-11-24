@@ -251,6 +251,10 @@
 
         </table>
 
+        <div class="table-footer">
+            {{ $cstmedcine->appends(request()->query())->links() }}
+        </div>
+
     </div>
 
 </div>

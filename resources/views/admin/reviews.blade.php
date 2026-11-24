@@ -115,6 +115,10 @@
 
         </table>
 
+        <div class="table-footer">
+            {{ $reviews->appends(request()->query())->links() }}
+        </div>
+
     </div>
 
 </div>

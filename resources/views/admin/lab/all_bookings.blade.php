@@ -227,16 +227,9 @@
             </table>
         </div>
 
-        @if($bookings->hasPages())
-        <div style="padding:16px 20px;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;">
-            <div style="font-size:13px;color:#6b7280;">
-                Showing {{ $bookings->firstItem() ?? 0 }} to {{ $bookings->lastItem() ?? 0 }} of {{ $bookings->total() }} bookings
-            </div>
-            <div>
-                {{ $bookings->links() }}
-            </div>
+        <div class="table-footer" style="padding:14px 20px;border-top:1px solid #e5e7eb;background:#fff;">
+            {{ $bookings->appends(request()->query())->links() }}
         </div>
-        @endif
     </div>
 
 </main>
