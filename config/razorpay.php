@@ -9,8 +9,8 @@ return [
     | Used by Razorpay SDK and Payment Services across API and Admin.
     |
     */
-    'key' => env('RAZORPAY_KEY', 'rzp_test_U3zV6osfu1lI72'),
-    'secret' => env('RAZORPAY_SECRET', 'yKOX3i4suTZvRzaC3TVDe9eT'),
+    'key' => env('RAZORPAY_KEY', 'rzp_test_U5ZUZ60slH5W2J'),
+    'secret' => env('RAZORPAY_SECRET', '7s3I21rNfySQ4rH5GISlWIyu'),
     'currency' => env('RAZORPAY_CURRENCY', 'INR'),
     'mode' => env('RAZORPAY_MODE', 'test'),
     'webhook_secret' => env('RAZORPAY_WEBHOOK_SECRET', ''),

@@ -34,8 +34,8 @@ class PaymentSetting extends Model
         return static::firstOrCreate(
             ['gateway' => 'razorpay'],
             [
-                'key_id' => config('razorpay.key', 'rzp_test_U3zV6osfu1lI72'),
-                'key_secret' => config('razorpay.secret', 'yKOX3i4suTZvRzaC3TVDe9eT'),
+                'key_id' => config('razorpay.key', 'rzp_test_U5ZUZ60slH5W2J'),
+                'key_secret' => config('razorpay.secret', '7s3I21rNfySQ4rH5GISlWIyu'),
                 'mode' => config('razorpay.mode', 'test'),
                 'is_active' => true,
                 'currency' => config('razorpay.currency', 'INR'),

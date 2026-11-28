@@ -32,8 +32,8 @@ return new class extends Migration
             // Seed initial Razorpay credentials provided by user
             DB::table('payment_settings')->insert([
                 'gateway' => 'razorpay',
-                'key_id' => 'rzp_test_U3zV6osfu1lI72',
-                'key_secret' => 'yKOX3i4suTZvRzaC3TVDe9eT',
+                'key_id' => 'rzp_test_U5ZUZ60slH5W2J',
+                'key_secret' => '7s3I21rNfySQ4rH5GISlWIyu',
                 'mode' => 'test',
                 'is_active' => true,
                 'currency' => 'INR',
