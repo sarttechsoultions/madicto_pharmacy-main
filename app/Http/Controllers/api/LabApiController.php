@@ -201,10 +201,13 @@ class LabApiController extends Controller
             }
         }
 
-        // Determine effective price at time of booking
-        $price = $test->discount_price !== null && (float)$test->discount_price > 0
-            ? (float)$test->discount_price
-            : (float)$test->price;
+        // Determine effective price at time of booking (selling price)
+        $price = (float)$test->price;
+        if ($test->cut_price !== null && (float)$test->cut_price > 0) {
+            $price = (float)$test->price;
+        } elseif ($test->discount_price !== null && (float)$test->discount_price > 0 && (float)$test->discount_price < (float)$test->price) {
+            $price = (float)$test->discount_price;
+        }
 
         // Resolve authenticated user ID
         $userId = auth('sanctum')->id() ?? auth()->id() ?? ($request->user_id ? (int)$request->user_id : null);
@@ -585,6 +588,176 @@ class LabApiController extends Controller
                 'booking_id' => $booking->booking_id,
                 'status'     => 'Cancelled',
             ],
+        ], 200);
+    }
+
+    /**
+     * API: Get Diagnostic Lab Tests Catalog
+     * GET /api/lab-tests
+     */
+    public function getTests(Request $request)
+    {
+        $query = LabTest::with(['category', 'lab'])
+            ->where('status', 'active');
+
+        // Optional search by name, code or description
+        if ($request->filled('search')) {
+            $search = trim($request->search);
+            $query->where(function ($q) use ($search) {
+                $q->where('test_name', 'like', "%{$search}%")
+                  ->orWhere('test_code', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        // Optional category filter
+        if ($request->filled('category_id') && $request->category_id !== 'all') {
+            $query->where('category_id', $request->category_id);
+        }
+
+        // Optional laboratory filter
+        if ($request->filled('lab_id') && $request->lab_id !== 'all') {
+            $query->where('lab_id', $request->lab_id);
+        }
+
+        $perPage = max(1, min(100, (int)$request->input('per_page', 20)));
+        $paginated = $query->latest('id')->paginate($perPage);
+
+        $data = collect($paginated->items())->map(function ($test) {
+            $sellingPrice = (float)($test->price ?? 0);
+            $cutPrice = null;
+            if ($test->cut_price !== null && (float)$test->cut_price > 0) {
+                $cutPrice = (float)$test->cut_price;
+            } elseif ($test->discount_price !== null && (float)$test->discount_price < (float)$test->price) {
+                $sellingPrice = (float)$test->discount_price;
+                $cutPrice = (float)$test->price;
+            }
+
+            $hasDiscount = ($cutPrice !== null && $cutPrice > $sellingPrice);
+            $discountPct = 0;
+            if ($hasDiscount && $cutPrice > 0) {
+                $discountPct = (int)($test->discount_percentage ?? round((($cutPrice - $sellingPrice) / $cutPrice) * 100));
+            }
+
+            return [
+                'id'                       => (int)$test->id,
+                'test_name'                => (string)$test->test_name,
+                'test_code'                => (string)($test->test_code ?? ''),
+                'description'              => (string)($test->description ?? ''),
+                'price'                    => $sellingPrice,
+                'selling_price'            => $sellingPrice,
+                'cut_price'                => $cutPrice,
+                'mrp'                      => $cutPrice,
+                'has_discount'             => $hasDiscount,
+                'discount_percentage'      => $discountPct,
+                'discount_off'             => $discountPct > 0 ? "{$discountPct}% OFF" : '',
+                'sample_type'              => (string)($test->sample_type ?? ''),
+                'report_delivery_time'     => (string)($test->report_delivery_time ?? ''),
+                'preparation_instructions' => (string)($test->preparation_instructions ?? ''),
+                'fasting_required'         => (bool)($test->fasting_required ?? false),
+                'category'                 => $test->category ? [
+                    'id'   => (int)$test->category->id,
+                    'name' => (string)$test->category->name,
+                ] : null,
+                'lab'                      => $test->lab ? [
+                    'id'             => (int)$test->lab->id,
+                    'name'           => (string)$test->lab->name,
+                    'address'        => (string)($test->lab->address ?? ''),
+                    'contact_number' => (string)($test->lab->contact_number ?? ''),
+                ] : null,
+                'status'                   => (string)$test->status,
+                'created_at'               => $test->created_at ? $test->created_at->format('Y-m-d H:i:s') : null,
+            ];
+        });
+
+        return response()->json([
+            'success'    => true,
+            'status'     => true,
+            'message'    => 'Diagnostic lab tests retrieved successfully',
+            'data'       => $data,
+            'pagination' => [
+                'current_page' => $paginated->currentPage(),
+                'last_page'    => $paginated->lastPage(),
+                'per_page'     => $paginated->perPage(),
+                'total'        => $paginated->total(),
+            ],
+        ], 200);
+    }
+
+    /**
+     * API: Get Single Lab Test Details
+     * GET /api/lab-tests/{id}
+     */
+    public function getTestDetail(Request $request, $id)
+    {
+        $test = LabTest::with(['category', 'lab'])
+            ->where(function ($q) use ($id) {
+                if (is_numeric($id)) {
+                    $q->where('id', $id)->orWhere('test_code', $id);
+                } else {
+                    $q->where('test_code', $id);
+                }
+            })
+            ->first();
+
+        if (!$test) {
+            return response()->json([
+                'success' => false,
+                'status'  => false,
+                'message' => 'Lab test not found in catalog',
+            ], 404);
+        }
+
+        $sellingPrice = (float)($test->price ?? 0);
+        $cutPrice = null;
+        if ($test->cut_price !== null && (float)$test->cut_price > 0) {
+            $cutPrice = (float)$test->cut_price;
+        } elseif ($test->discount_price !== null && (float)$test->discount_price < (float)$test->price) {
+            $sellingPrice = (float)$test->discount_price;
+            $cutPrice = (float)$test->price;
+        }
+
+        $hasDiscount = ($cutPrice !== null && $cutPrice > $sellingPrice);
+        $discountPct = 0;
+        if ($hasDiscount && $cutPrice > 0) {
+            $discountPct = (int)($test->discount_percentage ?? round((($cutPrice - $sellingPrice) / $cutPrice) * 100));
+        }
+
+        $payload = [
+            'id'                       => (int)$test->id,
+            'test_name'                => (string)$test->test_name,
+            'test_code'                => (string)($test->test_code ?? ''),
+            'description'              => (string)($test->description ?? ''),
+            'price'                    => $sellingPrice,
+            'selling_price'            => $sellingPrice,
+            'cut_price'                => $cutPrice,
+            'mrp'                      => $cutPrice,
+            'has_discount'             => $hasDiscount,
+            'discount_percentage'      => $discountPct,
+            'discount_off'             => $discountPct > 0 ? "{$discountPct}% OFF" : '',
+            'sample_type'              => (string)($test->sample_type ?? ''),
+            'report_delivery_time'     => (string)($test->report_delivery_time ?? ''),
+            'preparation_instructions' => (string)($test->preparation_instructions ?? ''),
+            'fasting_required'         => (bool)($test->fasting_required ?? false),
+            'category'                 => $test->category ? [
+                'id'   => (int)$test->category->id,
+                'name' => (string)$test->category->name,
+            ] : null,
+            'lab'                      => $test->lab ? [
+                'id'             => (int)$test->lab->id,
+                'name'           => (string)$test->lab->name,
+                'address'        => (string)($test->lab->address ?? ''),
+                'contact_number' => (string)($test->lab->contact_number ?? ''),
+            ] : null,
+            'status'                   => (string)$test->status,
+            'created_at'               => $test->created_at ? $test->created_at->format('Y-m-d H:i:s') : null,
+        ];
+
+        return response()->json([
+            'success' => true,
+            'status'  => true,
+            'message' => 'Lab test details retrieved successfully',
+            'data'    => $payload,
         ], 200);
     }
 }

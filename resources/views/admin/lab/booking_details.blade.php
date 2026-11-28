@@ -1,6 +1,36 @@
 @extends('admin.layouts.layout')
 
 @section('content')
+<style>
+    body, input, select, textarea, button, table, th, td, h1, h2, h3, h4, h5, h6, .content {
+        font-family: 'Poppins', sans-serif !important;
+    }
+    .copy-btn-mini {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0 4px;
+        color: #9ca3af;
+        font-size: 11px;
+        transition: color 0.15s;
+    }
+    .copy-btn-mini:hover {
+        color: #2563eb;
+    }
+    .badge-off {
+        background: #ecfdf5;
+        color: #059669;
+        border: 1px solid #a7f3d0;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+    }
+</style>
+
 <main class="content">
 
     <!-- BREADCRUMBS & HEADER -->
@@ -15,7 +45,7 @@
 
         <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;">
             <div>
-                <h1 style="font-family:'Syne',sans-serif;font-weight:800;font-size:24px;color:#111827;margin:0 0 6px 0;">
+                <h1 style="font-weight:800;font-size:24px;color:#111827;margin:0 0 6px 0;">
                     Booking Reference: <span style="color:#d4155b;">#{{ $booking->booking_id }}</span>
                 </h1>
                 <p style="color:#6b7280;font-size:14px;margin:0;">
@@ -49,7 +79,7 @@
                         <i class="fa-solid fa-user"></i>
                     </div>
                     <div>
-                        <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:#111827;margin:0;">Customer Information</h3>
+                        <h3 style="font-weight:700;font-size:16px;color:#111827;margin:0;">Customer Information</h3>
                         <p style="font-size:12px;color:#6b7280;margin:0;">Patient contact and physical sample collection address</p>
                     </div>
                 </div>
@@ -57,13 +87,23 @@
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:13px;">
                     <div>
                         <div style="color:#6b7280;font-size:12px;font-weight:600;text-transform:uppercase;">Customer / Patient Name</div>
-                        <div style="font-weight:700;color:#111827;font-size:15px;margin-top:2px;">{{ $booking->customer_name }}</div>
+                        <div style="font-weight:700;color:#111827;font-size:15px;margin-top:2px;display:flex;align-items:center;gap:6px;">
+                            {{ $booking->customer_name }}
+                            <button type="button" class="copy-btn-mini" onclick="copyToClipboard('{{ addslashes($booking->customer_name) }}', this)" title="Copy name">
+                                <i class="fa-regular fa-copy"></i>
+                            </button>
+                        </div>
                     </div>
 
                     <div>
                         <div style="color:#6b7280;font-size:12px;font-weight:600;text-transform:uppercase;">Mobile Number</div>
-                        <div style="font-weight:700;color:#111827;font-size:14px;margin-top:2px;">
-                            <i class="fa-solid fa-phone" style="font-size:11px;color:#2563eb;margin-right:4px;"></i>{{ $booking->customer_phone }}
+                        <div style="font-weight:700;color:#111827;font-size:14px;margin-top:2px;display:flex;align-items:center;gap:6px;">
+                            <span style="background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:6px;border:1px solid #bfdbfe;display:inline-flex;align-items:center;gap:6px;">
+                                <i class="fa-solid fa-phone" style="font-size:11px;"></i>{{ $booking->customer_phone }}
+                            </span>
+                            <button type="button" class="copy-btn-mini" onclick="copyToClipboard('{{ $booking->customer_phone }}', this)" title="Copy phone number">
+                                <i class="fa-regular fa-copy"></i>
+                            </button>
                         </div>
                     </div>
 
@@ -75,10 +115,15 @@
                     </div>
 
                     <div style="grid-column:1/-1;background:#f9fafb;padding:14px;border-radius:10px;border:1px solid #e5e7eb;">
-                        <div style="color:#1e40af;font-size:12px;font-weight:700;text-transform:uppercase;margin-bottom:6px;">
-                            <i class="fa-solid fa-location-dot" style="margin-right:4px;"></i> Complete Collection Address
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                            <div style="color:#1e40af;font-size:12px;font-weight:700;text-transform:uppercase;">
+                                <i class="fa-solid fa-location-dot" style="margin-right:4px;color:#ef4444;"></i> Complete Collection Address
+                            </div>
+                            <button type="button" class="copy-btn-mini" onclick="copyToClipboard('{{ addslashes($booking->address . ', ' . $booking->city . ', ' . $booking->state . ' - ' . $booking->pincode) }}', this)" title="Copy full collection address" style="font-size:12px;color:#2563eb;font-weight:600;display:inline-flex;align-items:center;gap:4px;">
+                                <i class="fa-regular fa-copy"></i> Copy Address
+                            </button>
                         </div>
-                        <div style="font-weight:600;color:#111827;line-height:1.4;">{{ $booking->address }}</div>
+                        <div style="font-weight:600;color:#111827;line-height:1.5;">{{ $booking->address }}</div>
                         <div style="margin-top:6px;display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:#4b5563;">
                             <span><strong>City:</strong> {{ $booking->city }}</span>
                             <span><strong>State:</strong> {{ $booking->state }}</span>
@@ -95,8 +140,8 @@
                         <i class="fa-solid fa-flask"></i>
                     </div>
                     <div>
-                        <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:#111827;margin:0;">Test Information</h3>
-                        <p style="font-size:12px;color:#6b7280;margin:0;">Diagnostic test ordered, partner laboratory, and pricing breakdown</p>
+                        <h3 style="font-weight:700;font-size:16px;color:#111827;margin:0;">Test Information &amp; Pricing</h3>
+                        <p style="font-size:12px;color:#6b7280;margin:0;">Diagnostic test ordered, laboratory partner, regular &amp; cut pricing</p>
                     </div>
                 </div>
 
@@ -106,6 +151,11 @@
                         <div style="font-weight:700;color:#111827;font-size:15px;margin-top:2px;">
                             {{ $booking->labTest->test_name ?? ($booking->items->first()->test_name ?? 'Diagnostic Test') }}
                         </div>
+                        @if($booking->labTest && $booking->labTest->description)
+                        <div style="font-size:12px;color:#6b7280;margin-top:4px;line-height:1.4;">
+                            {{ Str::limit($booking->labTest->description, 140) }}
+                        </div>
+                        @endif
                     </div>
 
                     <div>
@@ -131,14 +181,27 @@
                         </div>
                     </div>
 
-                    <div style="grid-column:1/-1;border-top:1px dashed #e5e7eb;padding-top:14px;display:flex;justify-content:space-between;align-items:center;">
+                    @php
+                        $testModel = $booking->labTest;
+                        $cutPrice = $testModel ? $testModel->cut_price : null;
+                        $offPct = $testModel ? $testModel->discount_percentage : null;
+                    @endphp
+
+                    <div style="grid-column:1/-1;border-top:1px dashed #e5e7eb;padding-top:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
                         <div>
-                            <span style="font-size:13px;color:#6b7280;">Test Price at Booking:</span>
+                            <span style="font-size:13px;color:#6b7280;">Test Regular / Cut Price:</span>
+                            @if($cutPrice && $cutPrice > $booking->total_amount)
+                            <span style="text-decoration:line-through;color:#9ca3af;font-size:14px;margin-left:6px;">₹{{ number_format($cutPrice, 2) }}</span>
+                            @if($offPct)
+                            <span class="badge-off" style="margin-left:6px;"><i class="fa-solid fa-arrow-down"></i> {{ $offPct }}% OFF</span>
+                            @endif
+                            @else
                             <strong style="margin-left:6px;color:#111827;">₹{{ number_format($booking->total_amount, 2) }}</strong>
+                            @endif
                         </div>
                         <div>
                             <span style="font-size:13px;color:#6b7280;">Total Amount Payable:</span>
-                            <span style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#111827;margin-left:8px;">
+                            <span style="font-size:22px;font-weight:800;color:#111827;margin-left:8px;">
                                 ₹{{ number_format($booking->total_amount, 2) }}
                             </span>
                         </div>
@@ -153,7 +216,7 @@
                         <i class="fa-solid fa-calendar-check"></i>
                     </div>
                     <div>
-                        <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:#111827;margin:0;">Booking Information</h3>
+                        <h3 style="font-weight:700;font-size:16px;color:#111827;margin:0;">Booking Information</h3>
                         <p style="font-size:12px;color:#6b7280;margin:0;">Scheduling coordinates, instructions, and lifecycle timestamps</p>
                     </div>
                 </div>
@@ -224,7 +287,7 @@
             
             <!-- STATUS MANAGEMENT CARD -->
             <div style="background:#fff;border-radius:14px;border:1px solid #e5e7eb;padding:24px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
-                <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:#111827;margin:0 0 16px 0;">
+                <h3 style="font-weight:700;font-size:16px;color:#111827;margin:0 0 16px 0;">
                     <i class="fa-solid fa-sliders" style="color:#2563eb;margin-right:6px;"></i> Update Booking Status
                 </h3>
 
@@ -301,4 +364,29 @@
     </div>
 
 </main>
+
+<script>
+function copyToClipboard(text, btn) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-check" style="color:#10b981;"></i>';
+            setTimeout(() => { btn.innerHTML = originalHtml; }, 1500);
+        }).catch(err => fallbackCopy(text, btn));
+    } else {
+        fallbackCopy(text, btn);
+    }
+}
+function fallbackCopy(text, btn) {
+    const el = document.createElement('textarea');
+    el.value = text;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-check" style="color:#10b981;"></i>';
+    setTimeout(() => { btn.innerHTML = originalHtml; }, 1500);
+}
+</script>
 @endsection

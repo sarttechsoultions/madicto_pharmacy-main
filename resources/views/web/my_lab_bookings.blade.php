@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Lab Test Bookings – Medicto Pharmacy</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
@@ -14,7 +14,10 @@
             --border-color: #e2e8f0;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'DM Sans', sans-serif; background-color: var(--bg-light); color: #1e293b; line-height: 1.5; }
+        body, input, select, textarea, button, h1, h2, h3, h4, h5, h6, p, span, a, div {
+            font-family: 'Poppins', sans-serif !important;
+        }
+        body { background-color: var(--bg-light); color: #1e293b; line-height: 1.5; }
         .container { max-width: 800px; margin: 0 auto; padding: 24px 16px; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
         .header h1 { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: var(--secondary); }

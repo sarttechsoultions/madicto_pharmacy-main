@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Diagnostic Lab Tests &amp; Health Checkups – Medicto Pharmacy</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
@@ -20,7 +20,10 @@
             --hover-shadow: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'DM Sans', sans-serif; background-color: var(--bg-light); color: var(--text-dark); line-height: 1.5; }
+        body, input, select, textarea, button, h1, h2, h3, h4, h5, h6, p, span, a, div {
+            font-family: 'Poppins', sans-serif !important;
+        }
+        body { background-color: var(--bg-light); color: var(--text-dark); line-height: 1.5; }
         
         .navbar {
             background: #fff; border-bottom: 1px solid var(--border-color); padding: 14px 20px;
@@ -246,10 +249,20 @@
         <div class="tests-grid">
             @forelse($tests as $test)
             @php
-                $mrp = (float)$test->price;
-                $effective = $test->discount_price !== null ? (float)$test->discount_price : $mrp;
-                $hasDiscount = ($test->discount_price !== null && $test->discount_price < $mrp);
-                $discountPct = $hasDiscount && $mrp > 0 ? round((($mrp - $effective) / $mrp) * 100) : 0;
+                $sellingPrice = (float)($test->price ?? 0);
+                $cutPrice = null;
+                if ($test->cut_price !== null && (float)$test->cut_price > 0) {
+                    $cutPrice = (float)$test->cut_price;
+                } elseif ($test->discount_price !== null && (float)$test->discount_price < (float)$test->price) {
+                    // legacy fallback
+                    $sellingPrice = (float)$test->discount_price;
+                    $cutPrice = (float)$test->price;
+                }
+                $hasDiscount = ($cutPrice !== null && $cutPrice > $sellingPrice);
+                $discountPct = 0;
+                if ($hasDiscount && $cutPrice > 0) {
+                    $discountPct = $test->discount_percentage ?? round((($cutPrice - $sellingPrice) / $cutPrice) * 100);
+                }
             @endphp
             <div class="test-card">
                 <div>
@@ -283,14 +296,14 @@
 
                 <div class="pricing-section">
                     <div class="price-box">
-                        <span class="effective-price">₹{{ number_format($effective, 2) }}</span>
+                        <span class="effective-price">₹{{ number_format($sellingPrice, 2) }}</span>
                         @if($hasDiscount)
-                        <span class="mrp-price">₹{{ number_format($mrp, 2) }}</span>
-                        <span class="discount-tag">{{ $discountPct }}% OFF</span>
+                        <span class="mrp-price" style="text-decoration:line-through;color:#94a3b8;font-size:14px;margin-left:4px;">₹{{ number_format($cutPrice, 2) }}</span>
+                        <span class="discount-tag" style="background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:4px;">{{ $discountPct }}% OFF</span>
                         @endif
                     </div>
 
-                    <button class="btn-book" onclick="openBookingModal({{ $test->id }}, '{{ addslashes($test->test_name) }}', '{{ addslashes($test->lab->name ?? 'Laboratory') }}', {{ $effective }})">
+                    <button class="btn-book" onclick="openBookingModal({{ $test->id }}, '{{ addslashes($test->test_name) }}', '{{ addslashes($test->lab->name ?? 'Laboratory') }}', {{ $sellingPrice }})">
                         <i class="fa-solid fa-calendar-plus"></i> Book Now
                     </button>
                 </div>

@@ -5,10 +5,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Medicto Pharmacy – Medicines Inventory</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
 
     <link rel="stylesheet" href="{{ asset('css/article-header.css') }}">
+
+    <style>
+        body, input, select, textarea, button, table, th, td, h1, h2, h3, h4, h5, h6, .nav-item, .page-header, .btn-primary {
+            font-family: 'Poppins', sans-serif !important;
+        }
+    </style>
 
     <link rel="icon" type="image/png" href="{{ asset('image/favicon.webp') }}" />
 
@@ -52,6 +58,9 @@
             </a>
 
             <div class="nav-label" style="margin-top:10px;">Lab Test Management</div>
+            <a class="nav-item {{ request()->routeIs('admin.lab.tests*') ? 'active' : '' }}" href="{{ route('admin.lab.tests') }}">
+                <i class="fa-solid fa-vials"></i><span>Lab Tests Catalog</span>
+            </a>
             <a class="nav-item {{ request()->routeIs('admin.lab.bookings.dashboard') || request()->routeIs('admin.lab.dashboard') ? 'active' : '' }}" href="{{ route('admin.lab.bookings.dashboard') }}">
                 <i class="fa-solid fa-chart-pie"></i><span>Lab Test Bookings</span>
             </a>
@@ -68,7 +77,7 @@
             <div class="nav-label" style="margin-top:10px;">Management</div>
             <a class="nav-item {{ request()->routeIs('user.index') ? 'active' : '' }}" href="{{ route('user.index') }}">
                 <i class="fa-solid fa-users"></i><span>Users</span>
-                <span class="nav-badge">{{ auth()->user()->count() ?? 0 }}</span>
+                <span class="nav-badge">{{ \App\Models\User::count() }}</span>
             </a>
             <a class="nav-item" href="#">
                 <i class="fa-solid fa-boxes-stacked"></i><span>Inventory</span>
@@ -139,10 +148,10 @@
                 </button>
                 <a href="{{ route('settings.profile') }}">
                     <div class="profile-pill">
-                        <div class="avatar">{{ Auth::user()->name[0] }}</div>
+                        <div class="avatar">{{ Auth::check() ? (Auth::user()->name[0] ?? 'A') : 'A' }}</div>
                         <div class="profile-info">
-                            <strong>{{ Auth::user()->name }}</strong>
-                            <small>{{ Auth::user()->email }}</small>
+                            <strong>{{ Auth::check() ? (Auth::user()->name ?? 'Admin User') : 'Admin' }}</strong>
+                            <small>{{ Auth::check() ? (Auth::user()->email ?? 'admin@medicto.com') : 'admin@medicto.com' }}</small>
                         </div>
                     </div>
                 </a>
@@ -162,7 +171,7 @@
         </div>
         @endif
 
-        @if ($errors->any())
+        @if(isset($errors) && $errors->any())
         <div class="custom-alert error">
             <ul>
                 @foreach ($errors->all() as $error)

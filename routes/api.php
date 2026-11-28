@@ -36,7 +36,9 @@ Route::get('/trending-medicine', [api::class, 'trendingProducts']);
 Route::get('/deals-of-day', [api::class, 'dealsOfDay']);
 Route::get('/category-is-available', [api::class, 'categoryIsAvailable']);
 
-// Mobile APIs for Lab Test Booking
+// Mobile APIs for Lab Test Catalog & Booking
+Route::get('/lab-tests', [LabApiController::class, 'getTests']);
+Route::get('/lab-tests/{id}', [LabApiController::class, 'getTestDetail']);
 Route::get('/lab-test-bookings/available-slots', [LabApiController::class, 'getAvailableSlots']);
 Route::post('/lab-test-bookings', [LabApiController::class, 'createBooking']);
 Route::get('/my-lab-test-bookings', [LabApiController::class, 'getMyBookings']);

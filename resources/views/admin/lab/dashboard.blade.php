@@ -1,12 +1,51 @@
 @extends('admin.layouts.layout')
 
 @section('content')
+<style>
+    body, input, select, textarea, button, table, th, td, h1, h2, h3, h4, h5, h6, .content, .page-header {
+        font-family: 'Poppins', sans-serif !important;
+    }
+    .phone-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: #eff6ff;
+        color: #1d4ed8;
+        border: 1px solid #bfdbfe;
+        padding: 2px 7px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 11px;
+    }
+    .address-box {
+        font-size: 11px;
+        color: #4b5563;
+        line-height: 1.35;
+        margin-top: 4px;
+        display: flex;
+        align-items: flex-start;
+        gap: 4px;
+    }
+    .copy-btn-mini {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0 2px;
+        color: #9ca3af;
+        font-size: 10px;
+        transition: color 0.15s;
+    }
+    .copy-btn-mini:hover {
+        color: #2563eb;
+    }
+</style>
+
 <main class="content">
 
     <!-- PAGE HEADER -->
     <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;margin-bottom:24px;">
         <div>
-            <h1 style="font-family:'Syne',sans-serif;font-weight:700;font-size:24px;color:#111827;margin:0 0 6px 0;">
+            <h1 style="font-weight:700;font-size:24px;color:#111827;margin:0 0 6px 0;">
                 <i class="fa-solid fa-chart-pie" style="color:#d4155b;margin-right:8px;"></i>Lab Test Bookings Dashboard
             </h1>
             <p style="color:#6b7280;font-size:14px;margin:0;">
@@ -14,6 +53,9 @@
             </p>
         </div>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <a href="{{ route('admin.lab.tests') }}" style="background:#fff;color:#d4155b;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:6px;border:1px solid #fbcfe8;box-shadow:0 1px 2px rgba(0,0,0,0.03);">
+                <i class="fa-solid fa-vials"></i> Manage Lab Tests
+            </a>
             <a href="{{ route('admin.lab.bookings.calendar') }}" style="background:#fff;color:#374151;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:6px;border:1px solid #d1d5db;box-shadow:0 1px 2px rgba(0,0,0,0.03);">
                 <i class="fa-solid fa-calendar-days" style="color:#2563eb;"></i> Booking Calendar
             </a>
@@ -26,7 +68,7 @@
         </div>
     </div>
 
-    <!-- SUMMARY CARDS (SECTION 3) -->
+    <!-- SUMMARY CARDS -->
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin-bottom:24px;">
         
         <!-- Total Bookings -->
@@ -37,7 +79,7 @@
                     <i class="fa-solid fa-clipboard-list"></i>
                 </span>
             </div>
-            <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:#111827;margin-top:12px;">
+            <div style="font-size:28px;font-weight:800;color:#111827;margin-top:12px;">
                 {{ number_format($stats['total'] ?? 0) }}
             </div>
             <div style="font-size:12px;color:#10b981;font-weight:600;margin-top:4px;">
@@ -53,7 +95,7 @@
                     <i class="fa-solid fa-clock"></i>
                 </span>
             </div>
-            <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:#d97706;margin-top:12px;">
+            <div style="font-size:28px;font-weight:800;color:#d97706;margin-top:12px;">
                 {{ number_format($stats['pending'] ?? 0) }}
             </div>
             <div style="font-size:12px;color:#b45309;margin-top:4px;">Requires confirmation</div>
@@ -67,7 +109,7 @@
                     <i class="fa-solid fa-circle-check"></i>
                 </span>
             </div>
-            <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:#4f46e5;margin-top:12px;">
+            <div style="font-size:28px;font-weight:800;color:#4f46e5;margin-top:12px;">
                 {{ number_format($stats['confirmed'] ?? 0) }}
             </div>
             <div style="font-size:12px;color:#6366f1;margin-top:4px;">Ready for sample collection</div>
@@ -81,7 +123,7 @@
                     <i class="fa-solid fa-check-double"></i>
                 </span>
             </div>
-            <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:#16a34a;margin-top:12px;">
+            <div style="font-size:28px;font-weight:800;color:#16a34a;margin-top:12px;">
                 {{ number_format($stats['completed'] ?? 0) }}
             </div>
             <div style="font-size:12px;color:#16a34a;margin-top:4px;">Reports generated &amp; delivered</div>
@@ -95,7 +137,7 @@
                     <i class="fa-solid fa-ban"></i>
                 </span>
             </div>
-            <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:#dc2626;margin-top:12px;">
+            <div style="font-size:28px;font-weight:800;color:#dc2626;margin-top:12px;">
                 {{ number_format($stats['cancelled'] ?? 0) }}
             </div>
             <div style="font-size:12px;color:#dc2626;margin-top:4px;">Rejected / cancelled</div>
@@ -108,7 +150,7 @@
         <!-- COLUMN 1: RECENT BOOKINGS -->
         <div style="background:#fff;border-radius:14px;border:1px solid #e5e7eb;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:#111827;margin:0;">
+                <h3 style="font-weight:700;font-size:16px;color:#111827;margin:0;">
                     <i class="fa-solid fa-clock-rotate-left" style="color:#d4155b;margin-right:6px;"></i> Recent Lab Bookings
                 </h3>
                 <a href="{{ route('admin.lab.bookings.index') }}" style="font-size:13px;font-weight:600;color:#2563eb;text-decoration:none;">
@@ -121,7 +163,8 @@
                     <thead>
                         <tr style="border-bottom:1px solid #e5e7eb;color:#6b7280;text-align:left;">
                             <th style="padding:10px 12px;font-weight:600;">Booking ID</th>
-                            <th style="padding:10px 12px;font-weight:600;">Customer</th>
+                            <th style="padding:10px 12px;font-weight:600;">Customer &amp; Mobile</th>
+                            <th style="padding:10px 12px;font-weight:600;">Collection Address</th>
                             <th style="padding:10px 12px;font-weight:600;">Test</th>
                             <th style="padding:10px 12px;font-weight:600;">Date &amp; Slot</th>
                             <th style="padding:10px 12px;font-weight:600;">Amount</th>
@@ -139,15 +182,34 @@
                                 </a>
                             </td>
                             <td style="padding:12px;">
-                                <div style="font-weight:600;color:#111827;">{{ $b->customer_name }}</div>
-                                <div style="font-size:11px;color:#6b7280;">{{ $b->customer_phone }}</div>
+                                <div style="font-weight:700;color:#111827;font-size:13px;">{{ $b->customer_name }}</div>
+                                <div style="margin-top:3px;">
+                                    <span class="phone-pill">
+                                        <i class="fa-solid fa-phone"></i> {{ $b->customer_phone }}
+                                        <button type="button" class="copy-btn-mini" onclick="copyToClipboard('{{ $b->customer_phone }}', this)" title="Copy phone number">
+                                            <i class="fa-regular fa-copy"></i>
+                                        </button>
+                                    </span>
+                                </div>
+                            </td>
+                            <td style="padding:12px;max-width:200px;">
+                                <div class="address-box">
+                                    <i class="fa-solid fa-location-dot" style="color:#ef4444;margin-top:2px;flex-shrink:0;"></i>
+                                    <div>
+                                        <span title="{{ $b->address }}">{{ Str::limit($b->address, 35) }}</span>
+                                        <div style="font-weight:600;color:#1e40af;font-size:10px;">{{ $b->city }}{{ $b->pincode ? ' - ' . $b->pincode : '' }}</div>
+                                    </div>
+                                    <button type="button" class="copy-btn-mini" onclick="copyToClipboard('{{ addslashes($b->address . ', ' . $b->city . ($b->pincode ? ' - ' . $b->pincode : '')) }}', this)" title="Copy full address">
+                                        <i class="fa-regular fa-copy"></i>
+                                    </button>
+                                </div>
                             </td>
                             <td style="padding:12px;">
-                                <div style="font-weight:500;color:#111827;">{{ $b->labTest->test_name ?? 'Diagnostic Test' }}</div>
+                                <div style="font-weight:600;color:#111827;">{{ $b->labTest->test_name ?? 'Diagnostic Test' }}</div>
                                 <div style="font-size:11px;color:#d4155b;">{{ $b->lab->name ?? 'Partner Lab' }}</div>
                             </td>
                             <td style="padding:12px;">
-                                <div style="color:#111827;">{{ $b->formatted_date }}</div>
+                                <div style="color:#111827;font-weight:500;">{{ $b->formatted_date }}</div>
                                 <div style="font-size:11px;color:#6b7280;">{{ $b->booking_time }}</div>
                             </td>
                             <td style="padding:12px;font-weight:700;color:#111827;">
@@ -159,14 +221,14 @@
                                 </span>
                             </td>
                             <td style="padding:12px;text-align:center;">
-                                <a href="{{ route('admin.lab.bookings.show', $b->id) }}" style="padding:5px 10px;background:#f3f4f6;color:#374151;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">
+                                <a href="{{ route('admin.lab.bookings.show', $b->id) }}" style="padding:5px 10px;background:#f3f4f6;color:#374151;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:4px;" title="View Booking Details">
                                     <i class="fa-solid fa-arrow-right"></i>
                                 </a>
                             </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="7" style="padding:30px;text-align:center;color:#9ca3af;">
+                            <td colspan="8" style="padding:30px;text-align:center;color:#9ca3af;">
                                 No recent bookings recorded yet.
                             </td>
                         </tr>
@@ -179,7 +241,7 @@
         <!-- COLUMN 2: TODAY'S APPOINTMENTS -->
         <div style="background:#fff;border-radius:14px;border:1px solid #e5e7eb;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:#111827;margin:0;">
+                <h3 style="font-weight:700;font-size:16px;color:#111827;margin:0;">
                     <i class="fa-solid fa-calendar-day" style="color:#2563eb;margin-right:6px;"></i> Today's Schedule
                 </h3>
                 <span style="background:#eff6ff;color:#1d4ed8;font-size:12px;font-weight:700;padding:2px 8px;border-radius:6px;">
@@ -201,8 +263,11 @@
                 <div style="font-size:12px;color:#4b5563;margin-top:2px;">
                     {{ $app->labTest->test_name ?? 'Test' }} &bull; {{ $app->city }}
                 </div>
+                <div style="font-size:11px;color:#6b7280;margin-top:3px;">
+                    <i class="fa-solid fa-location-dot" style="color:#ef4444;margin-right:2px;"></i> {{ Str::limit($app->address, 32) }}
+                </div>
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:6px;border-top:1px dashed #e5e7eb;font-size:11px;">
-                    <span style="color:#6b7280;"><i class="fa-solid fa-phone"></i> {{ $app->customer_phone }}</span>
+                    <span style="color:#1d4ed8;font-weight:600;"><i class="fa-solid fa-phone"></i> {{ $app->customer_phone }}</span>
                     <a href="{{ route('admin.lab.bookings.show', $app->id) }}" style="color:#d4155b;font-weight:600;text-decoration:none;">View &rarr;</a>
                 </div>
             </div>
@@ -224,4 +289,29 @@
     </div>
 
 </main>
+
+<script>
+function copyToClipboard(text, btn) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-check" style="color:#10b981;"></i>';
+            setTimeout(() => { btn.innerHTML = originalHtml; }, 1500);
+        }).catch(err => fallbackCopy(text, btn));
+    } else {
+        fallbackCopy(text, btn);
+    }
+}
+function fallbackCopy(text, btn) {
+    const el = document.createElement('textarea');
+    el.value = text;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-check" style="color:#10b981;"></i>';
+    setTimeout(() => { btn.innerHTML = originalHtml; }, 1500);
+}
+</script>
 @endsection

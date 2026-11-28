@@ -152,6 +152,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/lab/bookings/{id}/details-json', [LabController::class, 'bookingDetails'])->name('admin.lab.bookings.details_json');
     Route::delete('/lab/bookings/{id}', [LabController::class, 'destroyBooking'])->name('admin.lab.bookings.destroy');
 
+    // Lab Tests Catalog Management
+    Route::get('/lab/tests', [LabTestController::class, 'index'])->name('admin.lab.tests');
+    Route::post('/lab/tests', [LabTestController::class, 'store'])->name('admin.lab.tests.store');
+    Route::put('/lab/tests/{id}', [LabTestController::class, 'update'])->name('admin.lab.tests.update');
+    Route::post('/lab/tests/{id}/price', [LabTestController::class, 'updatePricing'])->name('admin.lab.tests.updatePrice');
+    Route::post('/lab/tests/{id}/toggle-status', [LabTestController::class, 'toggleStatus'])->name('admin.lab.tests.toggleStatus');
+    Route::delete('/lab/tests/{id}', [LabTestController::class, 'destroy'])->name('admin.lab.tests.destroy');
+
     // Compatibility aliases
     Route::get('/lab/dashboard', [LabController::class, 'dashboard'])->name('admin.lab.dashboard');
     Route::get('/lab/orders', [LabController::class, 'allBookings'])->name('admin.lab.orders');

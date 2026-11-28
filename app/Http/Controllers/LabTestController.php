@@ -69,7 +69,9 @@ class LabTestController extends Controller
             'lab_id'                   => 'required|exists:labs,id',
             'category_id'              => 'required|exists:lab_test_categories,id',
             'price'                    => 'required|numeric|min:0',
-            'discount_price'           => 'nullable|numeric|min:0|lte:price',
+            'cut_price'                => 'nullable|numeric|min:0',
+            'discount_percentage'      => 'nullable|numeric|min:0|max:100',
+            'discount_price'           => 'nullable|numeric|min:0',
             'preparation_instructions' => 'nullable|string',
             'sample_type'              => 'nullable|string|max:100',
             'report_delivery_time'     => 'nullable|string|max:100',
@@ -97,13 +99,26 @@ class LabTestController extends Controller
                 $testCode = 'LT-' . strtoupper(substr(preg_replace('/[^a-zA-Z]/', '', $request->test_name), 0, 3)) . rand(100, 999);
             }
 
+            $sellingPrice = (float)$request->price;
+            $cutPrice = $request->filled('cut_price') ? (float)$request->cut_price : null;
+            $discountPercentage = $request->filled('discount_percentage') ? (int)$request->discount_percentage : null;
+
+            // Auto-calculate discount percentage or cut price if one is given
+            if ($cutPrice && $cutPrice > $sellingPrice && ($discountPercentage === null || $discountPercentage <= 0)) {
+                $discountPercentage = (int)round((($cutPrice - $sellingPrice) / $cutPrice) * 100);
+            } elseif ($discountPercentage && $discountPercentage > 0 && ($cutPrice === null || $cutPrice <= $sellingPrice)) {
+                $cutPrice = round($sellingPrice / (1 - ($discountPercentage / 100)), 2);
+            }
+
             LabTest::create([
                 'test_name'                => $request->test_name,
                 'test_code'                => $testCode,
                 'lab_id'                   => $request->lab_id,
                 'category_id'              => $request->category_id,
                 'description'              => $request->description,
-                'price'                    => $request->price,
+                'price'                    => $sellingPrice,
+                'cut_price'                => $cutPrice,
+                'discount_percentage'      => $discountPercentage,
                 'discount_price'           => $request->discount_price,
                 'preparation_instructions' => $request->preparation_instructions,
                 'sample_type'              => $request->sample_type,
@@ -132,7 +147,9 @@ class LabTestController extends Controller
             'lab_id'                   => 'required|exists:labs,id',
             'category_id'              => 'required|exists:lab_test_categories,id',
             'price'                    => 'required|numeric|min:0',
-            'discount_price'           => 'nullable|numeric|min:0|lte:price',
+            'cut_price'                => 'nullable|numeric|min:0',
+            'discount_percentage'      => 'nullable|numeric|min:0|max:100',
+            'discount_price'           => 'nullable|numeric|min:0',
             'preparation_instructions' => 'nullable|string',
             'sample_type'              => 'nullable|string|max:100',
             'report_delivery_time'     => 'nullable|string|max:100',
@@ -157,12 +174,24 @@ class LabTestController extends Controller
                 $test->image = 'uploads/lab_tests/' . $filename;
             }
 
+            $sellingPrice = (float)$request->price;
+            $cutPrice = $request->filled('cut_price') ? (float)$request->cut_price : null;
+            $discountPercentage = $request->filled('discount_percentage') ? (int)$request->discount_percentage : null;
+
+            if ($cutPrice && $cutPrice > $sellingPrice && ($discountPercentage === null || $discountPercentage <= 0)) {
+                $discountPercentage = (int)round((($cutPrice - $sellingPrice) / $cutPrice) * 100);
+            } elseif ($discountPercentage && $discountPercentage > 0 && ($cutPrice === null || $cutPrice <= $sellingPrice)) {
+                $cutPrice = round($sellingPrice / (1 - ($discountPercentage / 100)), 2);
+            }
+
             $test->test_name                = $request->test_name;
             $test->test_code                = $request->test_code ?: $test->test_code;
             $test->lab_id                   = $request->lab_id;
             $test->category_id              = $request->category_id;
             $test->description              = $request->description;
-            $test->price                    = $request->price;
+            $test->price                    = $sellingPrice;
+            $test->cut_price                = $cutPrice;
+            $test->discount_percentage      = $discountPercentage;
             $test->discount_price           = $request->discount_price;
             $test->preparation_instructions = $request->preparation_instructions;
             $test->sample_type              = $request->sample_type;
@@ -185,12 +214,28 @@ class LabTestController extends Controller
         $test = LabTest::findOrFail($id);
 
         $request->validate([
-            'price'          => 'required|numeric|min:0',
-            'discount_price' => 'nullable|numeric|min:0|lte:price',
+            'price'               => 'required|numeric|min:0',
+            'cut_price'           => 'nullable|numeric|min:0',
+            'discount_percentage' => 'nullable|numeric|min:0|max:100',
+            'discount_price'      => 'nullable|numeric|min:0',
         ]);
 
-        $test->price = $request->price;
-        $test->discount_price = $request->discount_price;
+        $sellingPrice = (float)$request->price;
+        $cutPrice = $request->filled('cut_price') ? (float)$request->cut_price : null;
+        $discountPercentage = $request->filled('discount_percentage') ? (int)$request->discount_percentage : null;
+
+        if ($cutPrice && $cutPrice > $sellingPrice && ($discountPercentage === null || $discountPercentage <= 0)) {
+            $discountPercentage = (int)round((($cutPrice - $sellingPrice) / $cutPrice) * 100);
+        } elseif ($discountPercentage && $discountPercentage > 0 && ($cutPrice === null || $cutPrice <= $sellingPrice)) {
+            $cutPrice = round($sellingPrice / (1 - ($discountPercentage / 100)), 2);
+        }
+
+        $test->price = $sellingPrice;
+        $test->cut_price = $cutPrice;
+        $test->discount_percentage = $discountPercentage;
+        if ($request->filled('discount_price')) {
+            $test->discount_price = $request->discount_price;
+        }
         $test->save();
 
         return redirect()->back()->with('success', "Pricing updated for {$test->test_name}!");
